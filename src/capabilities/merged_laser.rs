@@ -4,10 +4,9 @@ use super::{Capability, CapabilityId, Context};
 use crate::domain::{LaserScan, Message, Timestamp};
 use crate::qi::keys;
 use crate::qi::services::AlMemory;
-use crate::qi::value::{as_f32, as_f32s};
+use crate::qi::value::{as_f32, as_f32s, as_f32s_lossy};
 use crate::Result;
 use async_trait::async_trait;
-use qi::value::Value;
 
 /// Default publishing rate in Hz.
 pub const DEFAULT_HZ: f32 = 10.0;
@@ -75,7 +74,7 @@ impl Capability for MergedLaser {
             tracing::debug!("NAOqiDepth2Laser not available");
             return Ok(());
         };
-        let xy = floats_or_holes(&readings);
+        let xy = as_f32s_lossy(&readings);
         let scan = super::laser::build_scan(&xy, stamp);
         let merged = merge(&scan.ranges, &depth, stamp);
         ctx.transport
@@ -186,15 +185,6 @@ async fn read_depth_sample(memory: &AlMemory) -> Option<DepthSample> {
 }
 
 /// Non-numeric readings are holes, as on the wire.
-fn floats_or_holes(value: &Value<'_>) -> Vec<f32> {
-    match value {
-        Value::List(elements) | Value::Tuple(elements) => elements
-            .iter()
-            .map(|element| as_f32(element).unwrap_or(HOLE))
-            .collect(),
-        _ => Vec::new(),
-    }
-}
 
 #[cfg(test)]
 mod tests {

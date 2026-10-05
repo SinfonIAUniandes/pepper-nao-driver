@@ -3,10 +3,9 @@
 use super::{Capability, CapabilityId, Context};
 use crate::domain::{LaserScan, Message, Timestamp};
 use crate::qi::keys;
-use crate::qi::value::as_f32;
+use crate::qi::value::as_f32s_lossy;
 use crate::Result;
 use async_trait::async_trait;
-use qi::value::Value;
 
 /// Default publishing rate in Hz.
 pub const DEFAULT_HZ: f32 = 10.0;
@@ -51,20 +50,10 @@ impl Capability for Laser {
     async fn tick(&self, ctx: &Context) -> Result<()> {
         let keys = keys::laser_keys();
         let raw = ctx.robot.memory.get_list_data(&keys).await?;
-        let xy = floats_or_holes(&raw);
+        let xy = as_f32s_lossy(&raw);
         let scan = build_scan(&xy, ctx.transport.now());
         ctx.transport
             .publish(self.id().as_str(), Message::LaserScan(scan))
-    }
-}
-
-/// Non-numeric readings are holes, as on the wire.
-fn floats_or_holes(value: &Value<'_>) -> Vec<f32> {
-    match value {
-        Value::List(elements) | Value::Tuple(elements) => {
-            elements.iter().map(|element| as_f32(element).unwrap_or(HOLE)).collect()
-        }
-        _ => Vec::new(),
     }
 }
 

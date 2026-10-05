@@ -140,6 +140,16 @@ pub fn as_texts(value: &Value<'_>) -> Option<Vec<String>> {
     }
 }
 
+/// Reads a list of floats, mapping non-numeric entries to `-1`.
+pub fn as_f32s_lossy(value: &Value<'_>) -> Vec<f32> {
+    match plain(value.clone()) {
+        Value::List(elements) | Value::Tuple(elements) => {
+            elements.iter().map(|element| as_f32(element).unwrap_or(-1.0)).collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
 /// Adapts call arguments to the parameter signature advertised by the service.
 ///
 /// NAOqi methods taking ALValue parameters expect them encoded as dynamic
@@ -216,6 +226,13 @@ mod tests {
             .cast_into()
             .unwrap();
         assert_eq!(raw.into_inner(), vec![1u8, 2].into_value());
+    }
+
+    #[test]
+    fn lossy_list_readers_keep_holes() {
+        let mixed = Value::List(vec![1.0f32.into_value(), "x".to_owned().into_value()]);
+        assert_eq!(as_f32s_lossy(&mixed), vec![1.0, -1.0]);
+        assert!(as_f32s_lossy(&Value::Unit).is_empty());
     }
 
     #[test]
