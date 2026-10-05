@@ -9,7 +9,7 @@ use crate::qi::object::Toolkit;
 use crate::qi::services::Robot;
 use crate::qi::{ObjectService, Service};
 use crate::shm::SharedMemories;
-use crate::transport::Subscription;
+use crate::transport::{Subscription, Transport};
 use crate::Result;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -72,7 +72,10 @@ fn served_object_names() -> Vec<String> {
 }
 
 /// Connects to the robot's QI space and prepares the driver context.
-pub async fn connect(options: &Options) -> Result<Connected> {
+pub async fn connect(
+    options: &Options,
+    transport: Arc<dyn Transport>,
+) -> Result<Connected> {
     if options.instance_prefix.is_empty() {
         return Err(crate::Error::invalid(
             "instance prefix",
@@ -103,7 +106,7 @@ pub async fn connect(options: &Options) -> Result<Connected> {
 
     let ctx = Context {
         robot,
-        transport: Arc::new(crate::transport::memory::MemoryTransport::new()),
+        transport,
         toolkit,
         shm: Arc::new(SharedMemories::open()?),
         assets: Arc::new(Assets::load(options.assets_base.as_deref())?),
@@ -470,6 +473,40 @@ mod tests {
             recognition.calls_to("pause").last().expect("pause"),
             &false.into_value()
         );
+    }
+
+    /// End-to-end smoke test over the full capability set: control commands
+    /// enable their groups and the periodic sensors reach the transport.
+    #[tokio::test(start_paused = true)]
+    async fn default_set_runs_the_navigation_and_misc_flows() {
+        let _guard = shm_lock().await;
+        let harness = Harness::default();
+        let memory = harness.fakes.service("ALMemory");
+        memory.script("getListData", vec![0.0f32; 90].into_value());
+        let motion = harness.fakes.service("ALMotion");
+        motion.script("getBodyNames", vec!["HeadYaw".to_owned()].into_value());
+        motion.script("getAngles", vec![0.0f32].into_value());
+        motion.script("getPosition", vec![0.0f32; 6].into_value());
+        motion.script("getRobotVelocity", vec![0.0f32; 6].into_value());
+
+        let driver = Driver::new(harness.ctx.clone(), crate::capabilities::default_capabilities());
+        driver.start().await.expect("start");
+
+        for request in [
+            ControlRequest::Navigation(crate::domain::NavigationCommand::EnableAll),
+            ControlRequest::Motion(crate::domain::MotionCommand::EnableAll),
+            ControlRequest::Misc(crate::domain::MiscCommand::EnableAll),
+        ] {
+            assert_eq!(driver.handle_control(request).await.result, "ok");
+        }
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        for topic in ["tf", "odom", "laser"] {
+            assert!(!harness.transport.published_on(topic).is_empty(), "{topic}");
+        }
+        assert!(harness.ctx.shm.enabled(crate::shm::Segment::Depth2Laser));
+
+        driver.shutdown().await.expect("shutdown");
     }
 
     #[tokio::test(start_paused = true)]

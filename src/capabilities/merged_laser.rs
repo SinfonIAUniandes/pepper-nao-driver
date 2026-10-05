@@ -184,8 +184,6 @@ async fn read_depth_sample(memory: &AlMemory) -> Option<DepthSample> {
     })
 }
 
-/// Non-numeric readings are holes, as on the wire.
-
 #[cfg(test)]
 mod tests {
     use super::*;

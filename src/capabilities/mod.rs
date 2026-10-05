@@ -208,6 +208,39 @@ pub trait Capability: Send + Sync {
     }
 }
 
+/// The full capability set, as assembled by the driver binary.
+pub fn default_capabilities() -> Vec<Arc<dyn Capability>> {
+    vec![
+        Arc::new(tf::Tf::default()),
+        Arc::new(odom::Odom),
+        Arc::new(laser::Laser),
+        Arc::new(depth_to_laser::DepthToLaser::new()),
+        Arc::new(merged_laser::MergedLaser),
+        Arc::new(camera::Camera::new(crate::domain::CameraId::Front)),
+        Arc::new(camera::Camera::new(crate::domain::CameraId::Bottom)),
+        Arc::new(camera::Camera::new(crate::domain::CameraId::Depth)),
+        Arc::new(faces::FaceDetector::new(crate::domain::CameraId::Front)),
+        Arc::new(faces::FaceDetector::new(crate::domain::CameraId::Bottom)),
+        Arc::new(mic::Mic::new()),
+        Arc::new(mic_localization::MicLocalization),
+        Arc::new(speech::Speech::new()),
+        Arc::new(cmd_vel::CmdVel::new()),
+        Arc::new(moveto::MoveTo::new()),
+        Arc::new(free_zone::FreeZone::new()),
+        Arc::new(navigation::NavigationGoal::new()),
+        Arc::new(navigation::PoseSet::new()),
+        Arc::new(navigation::NavigationPath),
+        Arc::new(navigation::PosePub),
+        Arc::new(navigation::NavigationResult),
+        Arc::new(animation::Animation::new()),
+        Arc::new(joints::SetAngles::new()),
+        Arc::new(leds::Leds::new()),
+        Arc::new(special_settings::SpecialSettings::new()),
+        Arc::new(sonar::Sonar::new()),
+        Arc::new(touch::Touch),
+    ]
+}
+
 /// Tracks which capabilities are enabled.
 #[derive(Default)]
 pub struct Registry {
