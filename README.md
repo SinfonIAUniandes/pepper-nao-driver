@@ -90,7 +90,7 @@ consumers. Topic names equal capability ids.
 `navigation_tools`, `vision_tools`, `audio_tools`, `motion_tools`, `misc_tools`
 and `speech_recognition` are served on the transport RPC channel. Commands are
 exclusive and always succeed on the channel; failures come back in the result
-string. See `technical-requirements.md` section 6 for the command sets.
+string. The command sets live in [`src/domain/control.rs`](src/domain/control.rs).
 
 ## Writing a transport adapter
 
