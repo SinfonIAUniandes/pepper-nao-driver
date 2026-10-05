@@ -12,6 +12,7 @@
 pub mod domain;
 pub mod error;
 pub mod qi;
+pub mod shm;
 pub mod transport;
 
 pub use error::{Error, Result};
