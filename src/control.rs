@@ -563,6 +563,118 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn vision_commands_drive_the_camera_capabilities() {
+        let harness = Harness::default();
+        let camera = Recording::with_configure_result(
+            CapabilityId::FrontCamera,
+            ConfigurationResult::CameraParams(CameraParams::default()),
+        );
+        let driver = Driver::new(harness.ctx.clone(), vec![camera.clone()]);
+        let config = crate::domain::CameraConfig::color_default();
+
+        dispatch(
+            &driver,
+            ControlRequest::Vision(VisionTools {
+                camera: CameraTarget::FrontCamera,
+                command: VisionCommand::Custom(config, CameraParams::default()),
+            }),
+        )
+        .await;
+        assert!(driver.is_enabled(CapabilityId::FrontCamera));
+        assert_eq!(driver.frequency(CapabilityId::FrontCamera), Some(10.0));
+        assert_eq!(camera.configures.load(std::sync::atomic::Ordering::Relaxed), 1);
+
+        let response = dispatch(
+            &driver,
+            ControlRequest::Vision(VisionTools {
+                camera: CameraTarget::FrontCamera,
+                command: VisionCommand::GetParameters(CameraParams::default()),
+            }),
+        )
+        .await;
+        assert_eq!(response.params, Some(ControlParams::Camera(CameraParams::default())));
+
+        dispatch(
+            &driver,
+            ControlRequest::Vision(VisionTools {
+                camera: CameraTarget::FrontCamera,
+                command: VisionCommand::Disable,
+            }),
+        )
+        .await;
+        assert!(!driver.is_enabled(CapabilityId::FrontCamera));
+    }
+
+    #[tokio::test]
+    async fn face_detectors_enable_and_disable() {
+        let harness = Harness::default();
+        let (driver, _) = driver(&harness);
+        for command in [VisionCommand::Enable, VisionCommand::Disable] {
+            let response = dispatch(
+                &driver,
+                ControlRequest::Vision(VisionTools {
+                    camera: CameraTarget::BottomCameraFaceDetector,
+                    command,
+                }),
+            )
+            .await;
+            assert_eq!(response.result, "ok");
+        }
+        assert!(!driver.is_enabled(CapabilityId::BottomCameraFaceDetector));
+    }
+
+    #[tokio::test]
+    async fn audio_commands_drive_their_group() {
+        let harness = Harness::default();
+        let mic = Recording::new(CapabilityId::Mic, None);
+        let driver = Driver::new(
+            harness.ctx.clone(),
+            vec![
+                mic.clone(),
+                Recording::new(CapabilityId::Speech, None),
+                Recording::new(CapabilityId::MicLocalization, None),
+            ],
+        );
+
+        dispatch(&driver, ControlRequest::Audio(AudioCommand::Enable)).await;
+        assert!(driver.is_enabled(CapabilityId::Mic));
+        assert!(driver.is_enabled(CapabilityId::Speech));
+        assert!(driver.is_enabled(CapabilityId::MicLocalization));
+
+        dispatch(&driver, ControlRequest::Audio(AudioCommand::Disable)).await;
+        assert!(!driver.is_enabled(CapabilityId::Mic));
+
+        dispatch(
+            &driver,
+            ControlRequest::Audio(AudioCommand::Custom(
+                crate::domain::MicConfig::DEFAULT,
+            )),
+        )
+        .await;
+        assert!(driver.is_enabled(CapabilityId::Mic));
+        assert_eq!(mic.configures.load(std::sync::atomic::Ordering::Relaxed), 1);
+
+        dispatch(&driver, ControlRequest::Audio(AudioCommand::DisableTts)).await;
+        assert!(!driver.is_enabled(CapabilityId::Speech));
+    }
+
+    #[tokio::test]
+    async fn motion_and_misc_disable_all_reverse_their_groups() {
+        let harness = Harness::default();
+        let (driver, _) = driver(&harness);
+        dispatch(&driver, ControlRequest::Motion(MotionCommand::EnableAll)).await;
+        dispatch(&driver, ControlRequest::Motion(MotionCommand::DisableAll)).await;
+        assert!(!driver.is_enabled(CapabilityId::Animation));
+        assert!(!driver.is_enabled(CapabilityId::SetAngles));
+
+        dispatch(&driver, ControlRequest::Misc(MiscCommand::EnableAll)).await;
+        dispatch(&driver, ControlRequest::Misc(MiscCommand::DisableAll)).await;
+        assert!(!driver.is_enabled(CapabilityId::Leds));
+        assert!(!driver.is_enabled(CapabilityId::Sonar));
+        assert!(!driver.is_enabled(CapabilityId::Touch));
+    }
+
+    #[tokio::test]
     async fn failures_are_reported_in_the_result_string() {
         let harness = Harness::default();
         let driver = Driver::new(harness.ctx.clone(), vec![]);

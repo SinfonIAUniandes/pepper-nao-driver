@@ -31,7 +31,12 @@ cargo test
 
 The test suite runs the whole driver against fakes: `capabilities::support`
 provides a fake robot (recording QI calls) and `MemoryTransport` records the
-published messages. No robot and no QI wire are needed.
+published messages. No robot and no QI wire are needed. Coverage:
+
+```sh
+cargo install cargo-llvm-cov && rustup component add llvm-tools-preview
+cargo llvm-cov --lib --tests
+```
 
 ## Run
 

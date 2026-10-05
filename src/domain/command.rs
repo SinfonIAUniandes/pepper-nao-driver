@@ -80,3 +80,21 @@ pub struct FreeZoneRequest {
     pub desired_radius: f32,
     pub displacement: f32,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn joint_command_tracks_its_length() {
+        let empty = JointCommand::default();
+        assert!(empty.is_empty());
+        let command = JointCommand {
+            names: vec!["HeadYaw".to_owned()],
+            angles: vec![0.1],
+            fraction_max_speed: vec![0.5],
+        };
+        assert_eq!(command.len(), 1);
+        assert!(!command.is_empty());
+    }
+}
