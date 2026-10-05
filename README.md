@@ -5,8 +5,12 @@ events) to domain capabilities that flow over a pluggable transport. The driver
 does not implement planners, localizers or depth math — it drives what Pepper
 exposes and bridges the rest to external modules.
 
-All QI functionality comes from the [`qi`](../../libqi-rs) crate; this crate
-never touches the QI wire format.
+All QI functionality comes from the [`qi`](https://github.com/JuanDGA/libqi-rs)
+crate (the `develop` branch); this crate never touches the QI wire format.
+`JuanDGA/libqi-rs` is a fork of
+[`aldebaran/libqi-rs`](https://github.com/aldebaran/libqi-rs) that the
+maintainer is completing with the goal of merging it into the official
+repository.
 
 ## Layout
 

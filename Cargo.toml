@@ -10,8 +10,10 @@ authors = [
 license = "Apache-2.0"
 
 [dependencies]
-# QI stack: the only source of QI functionality. Nothing QI-related is reimplemented here.
-qi = { version = "1.0.0-dev", path = "../../libqi-rs/qi" }
+# QI stack: the only source of QI functionality. Nothing QI-related is
+# reimplemented here. The fork tracks libqi-rs development towards the official
+# aldebaran/libqi-rs.
+qi = { git = "https://github.com/JuanDGA/libqi-rs", branch = "develop" }
 
 async-trait = "0.1"
 clap = { version = "4", features = ["derive"] }
