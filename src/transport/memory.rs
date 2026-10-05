@@ -130,7 +130,7 @@ impl Transport for MemoryTransport {
     }
 
     fn timer(&self, hz: f32) -> Timer {
-        if !(hz > 0.0) {
+        if hz <= 0.0 {
             return Box::pin(stream::empty());
         }
         let period = Duration::from_secs_f64(1.0 / f64::from(hz));

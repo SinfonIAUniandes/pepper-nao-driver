@@ -23,10 +23,6 @@ impl Frequency {
         Self(Arc::new(Mutex::new(hz)))
     }
 
-    fn get(&self) -> f32 {
-        *self.0.lock().unwrap_or_else(|err| err.into_inner())
-    }
-
     fn set(&self, hz: f32) {
         *self.0.lock().unwrap_or_else(|err| err.into_inner()) = hz;
     }
@@ -114,7 +110,7 @@ async fn run_job(
         let Some(mut stream) = timer.take() else {
             return;
         };
-        if !(rate > 0.0) {
+        if rate <= 0.0 {
             // Parked job: no work while the frequency is zero.
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             timer = Some(stream);
@@ -124,10 +120,10 @@ async fn run_job(
             return;
         }
         timer = Some(stream);
-        if gate() {
-            if let Err(err) = work().await {
-                tracing::warn!(error = %err, "cycle skipped on error");
-            }
+        if gate()
+            && let Err(err) = work().await
+        {
+            tracing::warn!(error = %err, "cycle skipped on error");
         }
     }
 }

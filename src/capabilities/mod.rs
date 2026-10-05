@@ -274,9 +274,6 @@ pub(crate) mod support {
                 .collect()
         }
 
-        pub fn calls(&self) -> Vec<(String, Value<'static>)> {
-            self.calls.lock().expect("lock").clone()
-        }
     }
 
     #[async_trait]
@@ -308,15 +305,14 @@ pub(crate) mod support {
                 }),
                 _ => None,
             };
-            if let Some(argument) = argument {
-                if let Some(reply) = self
+            if let Some(argument) = argument
+                && let Some(reply) = self
                     .keyed_replies
                     .lock()
                     .expect("lock")
                     .get(&(method.to_owned(), argument))
-                {
-                    return plain(reply.clone());
-                }
+            {
+                return plain(reply.clone());
             }
             self.replies
                 .lock()
@@ -429,9 +425,9 @@ pub(crate) mod support {
     }
 
     /// Serializes tests that assert on the process-wide shared-memory flags.
-    pub fn shm_lock() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-        LOCK.lock().unwrap_or_else(|err| err.into_inner())
+    pub async fn shm_lock() -> tokio::sync::MutexGuard<'static, ()> {
+        static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        LOCK.lock().await
     }
 
     /// Capability test harness: a context wired to fakes.

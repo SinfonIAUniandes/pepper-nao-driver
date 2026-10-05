@@ -36,7 +36,7 @@ pub struct Options {
 pub struct Connected {
     pub ctx: Context,
     /// The QI node kept alive so the registered objects stay reachable.
-    node: Box<dyn std::any::Any + Send>,
+    _node: Box<dyn std::any::Any + Send>,
 }
 
 impl Connected {
@@ -85,7 +85,7 @@ pub async fn connect(options: &Options) -> Result<Connected> {
         builder = builder.add_service(name, Toolkit::clone(&toolkit));
     }
     let node = builder
-        .connect_to_space(options.qi_address.clone(), None)
+        .connect_to_space(options.qi_address, None)
         .start()
         .await?;
 
@@ -111,7 +111,7 @@ pub async fn connect(options: &Options) -> Result<Connected> {
     };
     Ok(Connected {
         ctx,
-        node: Box::new(node),
+        _node: Box::new(node),
     })
 }
 
@@ -393,7 +393,7 @@ mod tests {
 
     #[tokio::test]
     async fn shutdown_disables_and_zeroes_the_velocity() {
-        let _guard = shm_lock();
+        let _guard = shm_lock().await;
         let harness = Harness::default();
         let special = Recording::new(CapabilityId::SpecialSettings, None);
         let driver = Driver::new(harness.ctx.clone(), vec![special.clone()]);

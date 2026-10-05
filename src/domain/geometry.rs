@@ -78,16 +78,6 @@ impl Quaternion {
         }
     }
 
-    /// Hamilton product; `self` applied after `other`.
-    pub fn mul(self, other: Self) -> Self {
-        Self {
-            x: self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
-            y: self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
-            z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
-            w: self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z,
-        }
-    }
-
     pub fn rotate(self, v: Vector3) -> Vector3 {
         let qv = Vector3::new(self.x, self.y, self.z);
         let uv = cross(qv, v);
@@ -97,6 +87,20 @@ impl Quaternion {
             v.y + 2.0 * (self.w * uv.y + uuv.y),
             v.z + 2.0 * (self.w * uv.z + uuv.z),
         )
+    }
+}
+
+impl std::ops::Mul for Quaternion {
+    type Output = Quaternion;
+
+    /// Hamilton product; `self` applied after `other`.
+    fn mul(self, other: Self) -> Self {
+        Self {
+            x: self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
+            y: self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
+            z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
+            w: self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z,
+        }
     }
 }
 
@@ -174,7 +178,7 @@ impl Pose3 {
                 self.position.y + self.orientation.rotate(other.position).y,
                 self.position.z + self.orientation.rotate(other.position).z,
             ),
-            orientation: self.orientation.mul(other.orientation),
+            orientation: self.orientation * other.orientation,
         }
     }
 

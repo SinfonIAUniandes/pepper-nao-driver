@@ -73,10 +73,11 @@ impl RobotModel {
                 }
                 Ok(quick_xml::events::Event::End(element)) => {
                     depth = depth.saturating_sub(1);
-                    if depth == 1 && element.name().as_ref() == b"joint" {
-                        if let Some(joint) = current.take() {
-                            model.add_joint(joint.into_joint()?);
-                        }
+                    if depth == 1
+                        && element.name().as_ref() == b"joint"
+                        && let Some(joint) = current.take()
+                    {
+                        model.add_joint(joint.into_joint()?);
                     }
                 }
                 Ok(quick_xml::events::Event::Eof) => break,

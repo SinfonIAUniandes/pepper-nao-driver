@@ -130,7 +130,7 @@ mod tests {
     use crate::capabilities::Capability;
     use qi::value::IntoValue;
 
-    fn moves(harness: &Harness) -> Vec<Value> {
+    fn moves(harness: &Harness) -> Vec<Value<'static>> {
         harness
             .fakes
             .service("ALMotion")

@@ -401,7 +401,7 @@ mod tests {
 
     #[tokio::test]
     async fn enable_mapper_sets_its_group_and_shm_flags() {
-        let _guard = shm_lock();
+        let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
         let response = dispatch(&driver, ControlRequest::Navigation(NavigationCommand::EnableMapper)).await;
@@ -425,7 +425,7 @@ mod tests {
 
     #[tokio::test]
     async fn enable_all_skips_the_laser_merger() {
-        let _guard = shm_lock();
+        let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
         dispatch(&driver, ControlRequest::Navigation(NavigationCommand::EnableAll)).await;
@@ -439,7 +439,7 @@ mod tests {
 
     #[tokio::test]
     async fn disable_commands_reverse_their_group() {
-        let _guard = shm_lock();
+        let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
         dispatch(&driver, ControlRequest::Navigation(NavigationCommand::EnableNavigate)).await;
@@ -453,7 +453,7 @@ mod tests {
 
     #[tokio::test]
     async fn custom_navigation_applies_fields_independently() {
-        let _guard = shm_lock();
+        let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
         let custom = NavigationCustom {

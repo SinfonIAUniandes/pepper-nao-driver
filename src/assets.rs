@@ -63,10 +63,10 @@ fn find_share(base: Option<&Path>) -> Result<PathBuf> {
         // An explicit base (e.g. a QI package prefix) is authoritative.
         Some(base) => candidates.push(base.join("share")),
         None => {
-            if let Ok(executable) = std::env::current_exe() {
-                if let Some(dir) = executable.parent() {
-                    candidates.push(dir.join("share"));
-                }
+            if let Ok(executable) = std::env::current_exe()
+                && let Some(dir) = executable.parent()
+            {
+                candidates.push(dir.join("share"));
             }
             candidates.push(PathBuf::from("share"));
         }

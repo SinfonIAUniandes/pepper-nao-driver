@@ -12,9 +12,12 @@ use qi::value::{FromValue, IntoValue, Type, Value};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+/// Handler of one event payload.
+type Handler<T> = Arc<dyn Fn(T) + Send + Sync>;
+
 /// One callback target of the served object.
 #[derive(Clone)]
-pub struct Slot<T>(Arc<Mutex<Option<Arc<dyn Fn(T) + Send + Sync>>>>);
+pub struct Slot<T>(Arc<Mutex<Option<Handler<T>>>>);
 
 impl<T> Default for Slot<T> {
     fn default() -> Self {

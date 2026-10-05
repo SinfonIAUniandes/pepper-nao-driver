@@ -10,6 +10,9 @@ use super::{
 ///
 /// Output capabilities publish these, input capabilities consume them. Which
 /// topics are used is documented on [`crate::transport::Transport`].
+// Payloads range from a touch flag to a full image; boxing the large ones
+// would only push noise onto every consumer.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Message {
     // Outputs
