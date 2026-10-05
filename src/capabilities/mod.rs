@@ -7,8 +7,11 @@
 pub mod cmd_vel;
 pub mod depth_to_laser;
 pub mod laser;
+pub mod mic;
+pub mod mic_localization;
 pub mod odom;
 pub mod special_settings;
+pub mod speech;
 pub mod tf;
 
 use crate::assets::Assets;
