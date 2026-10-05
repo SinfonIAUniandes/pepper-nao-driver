@@ -10,6 +10,7 @@ pub mod free_zone;
 pub mod laser;
 pub mod merged_laser;
 pub mod moveto;
+pub mod navigation;
 pub mod odom;
 pub mod special_settings;
 pub mod tf;
