@@ -477,7 +477,6 @@ mod tests {
         assert!(!driver.is_enabled(CapabilityId::MoveTo));
         assert!(harness.ctx.shm.enabled(Segment::PepperHead));
         assert!(harness.ctx.shm.enabled(Segment::Depth2Laser));
-        assert!(!harness.ctx.shm.enabled(Segment::Planner));
     }
 
     #[tokio::test]

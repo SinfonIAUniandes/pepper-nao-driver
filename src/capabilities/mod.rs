@@ -506,8 +506,7 @@ pub(crate) mod support {
 
     /// Serializes tests that assert on the process-wide shared-memory flags.
     pub async fn shm_lock() -> tokio::sync::MutexGuard<'static, ()> {
-        static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-        LOCK.lock().await
+        crate::shm::test_lock().await
     }
 
     /// Capability test harness: a context wired to fakes.

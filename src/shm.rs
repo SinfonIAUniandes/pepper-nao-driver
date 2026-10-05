@@ -135,6 +135,13 @@ impl Drop for SharedMemory {
     }
 }
 
+/// Serializes tests that touch the process-wide flags.
+#[cfg(test)]
+pub(crate) async fn test_lock() -> tokio::sync::MutexGuard<'static, ()> {
+    static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    LOCK.lock().await
+}
+
 /// The four segments of one driver instance.
 pub struct SharedMemories {
     head: SharedMemory,
@@ -189,15 +196,17 @@ impl SharedMemories {
 mod tests {
     use super::*;
 
-    #[test]
-    fn open_write_and_read_back() {
+    #[tokio::test]
+    async fn open_write_and_read_back() {
+        let _guard = test_lock().await;
         let memory = SharedMemory::open(Segment::Planner).expect("open");
         memory.set_enabled(true).expect("write");
         memory.set_enabled(false).expect("write");
     }
 
-    #[test]
-    fn shared_memories_reset_clears_every_flag() {
+    #[tokio::test]
+    async fn shared_memories_reset_clears_every_flag() {
+        let _guard = test_lock().await;
         let memories = SharedMemories::open().expect("open");
         memories
             .set_enabled(Segment::PepperHead, true)

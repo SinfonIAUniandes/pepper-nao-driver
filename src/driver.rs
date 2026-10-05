@@ -536,16 +536,17 @@ mod tests {
         ] {
             assert_eq!(driver.handle_control(request).await.result, "ok");
         }
+        // A second of virtual time, advanced explicitly so the scheduler jobs
+        // run regardless of runtime idleness.
+        for _ in 0..50 {
+            tokio::time::advance(Duration::from_millis(20)).await;
+            tokio::task::yield_now().await;
+        }
         for topic in ["tf", "odom", "laser"] {
-            let mut published = false;
-            for _ in 0..200 {
-                if !harness.transport.published_on(topic).is_empty() {
-                    published = true;
-                    break;
-                }
-                tokio::time::sleep(Duration::from_millis(5)).await;
-            }
-            assert!(published, "{topic} never reached the transport");
+            assert!(
+                !harness.transport.published_on(topic).is_empty(),
+                "{topic} never reached the transport"
+            );
         }
         assert!(harness.ctx.shm.enabled(crate::shm::Segment::Depth2Laser));
 
