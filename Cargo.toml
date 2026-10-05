@@ -12,6 +12,7 @@ qi = { version = "1.0.0-dev", path = "../../libqi-rs/qi" }
 async-trait = "0.1"
 clap = { version = "4", features = ["derive"] }
 futures = "0.3"
+jpeg-encoder = "0.6"
 libc = "0.2"
 quick-xml = { version = "0.37", features = ["serialize"] }
 serde = { version = "1", features = ["derive"] }

@@ -1,6 +1,6 @@
 //! Commands the driver accepts from the bus.
 
-/// Supported speech languages. Anything else triggers the canned apology.
+/// Supported speech languages.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {
     English,
@@ -10,7 +10,9 @@ pub enum Language {
 /// Text the robot should say.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpeechCommand {
-    pub language: Language,
+    /// `None` when the requested language is unsupported; the robot then says
+    /// a canned apology in its current language instead of `text`.
+    pub language: Option<Language>,
     pub text: String,
     /// Say through ALAnimatedSpeech (with gestures) instead of plain text-to-speech.
     pub animated: bool,

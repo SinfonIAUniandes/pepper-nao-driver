@@ -2,8 +2,8 @@
 
 use super::{
     AnimationCommand, AudioBuffer, FaceSet, FreeZoneRequest, ImageFrame, JointCommand, LaserScan,
-    LedCommand, Odometry, Path, Pose2, Pose3, Range, SoundBearing, SpecialSetting, SpeechCommand,
-    Touch, Transform, Twist,
+    LedCommand, Odometry, Path, Pose2, Range, SoundBearing, SpecialSetting, SpeechCommand, Touch,
+    Transform, Twist, Vector3,
 };
 
 /// Domain message travelling over the transport, in both directions.
@@ -31,8 +31,8 @@ pub enum Message {
     SoundBearing(SoundBearing),
     /// `navigation_path`.
     Path(Path),
-    /// `pose-pub`.
-    Pose(Pose3),
+    /// `pose-pub`: the localizer pose as `x, y, theta`.
+    Vector3(Vector3),
     /// `navigation_result`.
     Text(String),
     /// `free_zone` result.

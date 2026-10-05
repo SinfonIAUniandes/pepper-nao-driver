@@ -79,7 +79,10 @@ pub struct ImageFrame {
     pub width: u32,
     pub height: u32,
     pub color_space: ColorSpace,
+    /// Raw pixels as delivered by the camera.
     pub data: Vec<u8>,
+    /// JPEG copy of the pixels when compression is enabled.
+    pub jpeg: Option<Vec<u8>>,
     pub camera_info: Option<CameraInfo>,
 }
 
