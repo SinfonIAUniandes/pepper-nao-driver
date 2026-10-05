@@ -26,9 +26,11 @@ pub mod tf;
 pub mod touch;
 
 use crate::assets::Assets;
-use crate::domain::{CameraConfig, CameraParams, DepthToLaserParams, Message, MicConfig, SpeechParams};
-use crate::qi::object::Toolkit;
+use crate::domain::{
+    CameraConfig, CameraParams, DepthToLaserParams, Message, MicConfig, SpeechParams,
+};
 use crate::qi::Robot;
+use crate::qi::object::Toolkit;
 use crate::shm::SharedMemories;
 use crate::transport::{MessageHandler, Transport};
 use async_trait::async_trait;
@@ -104,10 +106,33 @@ impl CapabilityId {
     pub fn all() -> &'static [CapabilityId] {
         use CapabilityId::*;
         &[
-            Tf, Odom, Laser, DepthToLaser, MergedLaser, FrontCamera, BottomCamera, DepthCamera,
-            FrontCameraFaceDetector, BottomCameraFaceDetector, Mic, MicLocalization, Speech,
-            CmdVel, MoveTo, FreeZone, NavigationGoal, PoseSet, NavigationPath, PosePub,
-            NavigationResult, Animation, SetAngles, Leds, SpecialSettings, Sonar, Touch,
+            Tf,
+            Odom,
+            Laser,
+            DepthToLaser,
+            MergedLaser,
+            FrontCamera,
+            BottomCamera,
+            DepthCamera,
+            FrontCameraFaceDetector,
+            BottomCameraFaceDetector,
+            Mic,
+            MicLocalization,
+            Speech,
+            CmdVel,
+            MoveTo,
+            FreeZone,
+            NavigationGoal,
+            PoseSet,
+            NavigationPath,
+            PosePub,
+            NavigationResult,
+            Animation,
+            SetAngles,
+            Leds,
+            SpecialSettings,
+            Sonar,
+            Touch,
         ]
     }
 }
@@ -270,15 +295,15 @@ pub(crate) mod support {
     //! Shared harness for capability tests.
 
     use super::{CapabilityId, Context};
+    use crate::Result;
     use crate::qi::object::Toolkit;
     use crate::qi::value::plain;
     use crate::qi::{Robot, Service};
     use crate::transport::MemoryTransport;
-    use crate::Result;
     use async_trait::async_trait;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use qi::value::Value;
     use std::collections::HashMap;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::{Arc, Mutex};
 
     /// Service double recording every call and returning scripted replies.
@@ -315,7 +340,6 @@ pub(crate) mod support {
                 .map(|(_, args)| args.clone())
                 .collect()
         }
-
     }
 
     #[async_trait]

@@ -1,13 +1,13 @@
 //! Microphone streaming through the `ROS-Driver-Audio` client.
 
 use super::{Capability, CapabilityId, Configuration, ConfigurationResult, Context};
+use crate::Result;
 use crate::domain::{AudioBuffer, Message, MicConfig};
 use crate::qi::events::RemoteAudio;
 use crate::qi::keys;
-use crate::Result;
 use async_trait::async_trait;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Channel map of robots reporting a non-zero microphone config code.
 const FOUR_CHANNEL_MAP: [u8; 4] = [3, 5, 0, 2];
@@ -64,7 +64,8 @@ impl Capability for Mic {
                 channel_map: map.clone(),
                 data: chunk.data,
             };
-            if let Err(err) = transport.publish(CapabilityId::Mic.as_str(), Message::Audio(buffer)) {
+            if let Err(err) = transport.publish(CapabilityId::Mic.as_str(), Message::Audio(buffer))
+            {
                 tracing::warn!(error = %err, "audio publish failed");
             }
         });
@@ -107,8 +108,8 @@ fn channel_map(config_code: i32) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use crate::qi::value::Raw;
     use qi::object::Object;
     use qi::value::{IntoValue, Value};
@@ -228,11 +229,13 @@ mod tests {
             channels: 0,
         };
         assert!(mic.enable(&harness.ctx).await.is_err());
-        assert!(harness
-            .fakes
-            .service("ALAudioDevice")
-            .calls_to("subscribe")
-            .is_empty());
+        assert!(
+            harness
+                .fakes
+                .service("ALAudioDevice")
+                .calls_to("subscribe")
+                .is_empty()
+        );
     }
 
     #[tokio::test]

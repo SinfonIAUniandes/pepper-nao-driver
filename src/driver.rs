@@ -1,16 +1,18 @@
 //! Driver lifecycle: connect to the robot, run the capabilities, serve the
 //! control RPCs.
 
+use crate::Result;
 use crate::assets::Assets;
-use crate::capabilities::{Capability, CapabilityId, Configuration, ConfigurationResult, Context, Registry};
+use crate::capabilities::{
+    Capability, CapabilityId, Configuration, ConfigurationResult, Context, Registry,
+};
 use crate::domain::{ControlRequest, ControlResponse, SpeechRecognitionRequest};
-use crate::qi::keys::{self, callback_service_name, AUDIO_CALLBACK_SERVICE};
+use crate::qi::keys::{self, AUDIO_CALLBACK_SERVICE, callback_service_name};
 use crate::qi::object::Toolkit;
 use crate::qi::services::Robot;
 use crate::qi::{ObjectService, Service};
 use crate::shm::SharedMemories;
 use crate::transport::{Subscription, Transport};
-use crate::Result;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -72,10 +74,7 @@ fn served_object_names() -> Vec<String> {
 }
 
 /// Connects to the robot's QI space and prepares the driver context.
-pub async fn connect(
-    options: &Options,
-    transport: Arc<dyn Transport>,
-) -> Result<Connected> {
+pub async fn connect(options: &Options, transport: Arc<dyn Transport>) -> Result<Connected> {
     if options.instance_prefix.is_empty() {
         return Err(crate::Error::invalid(
             "instance prefix",
@@ -220,7 +219,9 @@ impl Driver {
         id: CapabilityId,
         configuration: Configuration,
     ) -> Result<ConfigurationResult> {
-        self.capability(id)?.configure(&self.0.ctx, configuration).await
+        self.capability(id)?
+            .configure(&self.0.ctx, configuration)
+            .await
     }
 
     /// Serves one control RPC.
@@ -248,7 +249,9 @@ impl Driver {
         recognition
             .set_vocabulary(request.words.clone(), true)
             .await?;
-        recognition.subscribe(keys::SPEECH_RECOGNITION_CLIENT).await?;
+        recognition
+            .subscribe(keys::SPEECH_RECOGNITION_CLIENT)
+            .await?;
         robot
             .memory
             .subscribe_to_event(
@@ -276,7 +279,9 @@ impl Driver {
                 &callback_service_name(keys::WORD_RECOGNIZED),
             )
             .await;
-        let _ = recognition.unsubscribe(keys::SPEECH_RECOGNITION_CLIENT).await;
+        let _ = recognition
+            .unsubscribe(keys::SPEECH_RECOGNITION_CLIENT)
+            .await;
         let _ = recognition.pause(false).await;
 
         Ok(match outcome {
@@ -289,10 +294,9 @@ impl Driver {
     }
 
     fn capability(&self, id: CapabilityId) -> Result<&Arc<dyn Capability>> {
-        self.0
-            .capabilities
-            .get(&id)
-            .ok_or_else(|| crate::Error::invalid("capability", format!("unknown id {}", id.as_str())))
+        self.0.capabilities.get(&id).ok_or_else(|| {
+            crate::Error::invalid("capability", format!("unknown id {}", id.as_str()))
+        })
     }
 
     /// Periodic work runs only when enabled, publishing is on and the bus has
@@ -302,7 +306,9 @@ impl Driver {
         let transport = Arc::clone(&self.0.ctx.transport);
         let toolkit = self.0.ctx.toolkit.clone();
         Arc::new(move || {
-            registry.is_enabled(id) && toolkit.publish_enabled() && transport.has_consumers(id.as_str())
+            registry.is_enabled(id)
+                && toolkit.publish_enabled()
+                && transport.has_consumers(id.as_str())
         })
     }
 
@@ -350,7 +356,7 @@ impl Driver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::{shm_lock, Harness, Recording};
+    use crate::capabilities::support::{Harness, Recording, shm_lock};
     use crate::capabilities::{Configuration, ConfigurationResult};
     use qi::object::Object;
 
@@ -372,7 +378,10 @@ mod tests {
         driver.start().await.expect("start");
 
         assert!(driver.is_enabled(CapabilityId::SpecialSettings));
-        assert_eq!(special.enables.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert_eq!(
+            special.enables.load(std::sync::atomic::Ordering::Relaxed),
+            1
+        );
 
         let response = harness
             .transport
@@ -384,7 +393,10 @@ mod tests {
         assert_eq!(response, Some(ControlResponse::ok()));
 
         tokio::time::sleep(Duration::from_millis(250)).await;
-        assert!(laser.ticks.load(std::sync::atomic::Ordering::Relaxed) == 0, "laser stays disabled");
+        assert!(
+            laser.ticks.load(std::sync::atomic::Ordering::Relaxed) == 0,
+            "laser stays disabled"
+        );
 
         driver.enable(CapabilityId::Laser).await.expect("enable");
         tokio::time::sleep(Duration::from_millis(250)).await;
@@ -404,7 +416,10 @@ mod tests {
         driver.shutdown().await.expect("shutdown");
 
         assert!(!driver.is_enabled(CapabilityId::SpecialSettings));
-        assert_eq!(special.disables.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert_eq!(
+            special.disables.load(std::sync::atomic::Ordering::Relaxed),
+            1
+        );
         let moves = harness.fakes.service("ALMotion").calls_to("move");
         assert_eq!(moves[0], (0.0f32, 0.0f32, 0.0f32).into_value());
         assert!(!harness.ctx.shm.enabled(crate::shm::Segment::Planner));
@@ -422,11 +437,16 @@ mod tests {
                 .expect("configure"),
             ConfigurationResult::None
         );
-        assert_eq!(speech.configures.load(std::sync::atomic::Ordering::Relaxed), 1);
-        assert!(driver
-            .configure(CapabilityId::Laser, Configuration::ReadSpeechParams)
-            .await
-            .is_err());
+        assert_eq!(
+            speech.configures.load(std::sync::atomic::Ordering::Relaxed),
+            1
+        );
+        assert!(
+            driver
+                .configure(CapabilityId::Laser, Configuration::ReadSpeechParams)
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
@@ -489,7 +509,10 @@ mod tests {
         motion.script("getPosition", vec![0.0f32; 6].into_value());
         motion.script("getRobotVelocity", vec![0.0f32; 6].into_value());
 
-        let driver = Driver::new(harness.ctx.clone(), crate::capabilities::default_capabilities());
+        let driver = Driver::new(
+            harness.ctx.clone(),
+            crate::capabilities::default_capabilities(),
+        );
         driver.start().await.expect("start");
 
         for request in [
@@ -499,10 +522,16 @@ mod tests {
         ] {
             assert_eq!(driver.handle_control(request).await.result, "ok");
         }
-        tokio::time::sleep(Duration::from_millis(300)).await;
-
         for topic in ["tf", "odom", "laser"] {
-            assert!(!harness.transport.published_on(topic).is_empty(), "{topic}");
+            let mut published = false;
+            for _ in 0..200 {
+                if !harness.transport.published_on(topic).is_empty() {
+                    published = true;
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+            assert!(published, "{topic} never reached the transport");
         }
         assert!(harness.ctx.shm.enabled(crate::shm::Segment::Depth2Laser));
 

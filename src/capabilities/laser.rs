@@ -1,10 +1,10 @@
 //! Physical laser scan built from the three on-board laser segments.
 
 use super::{Capability, CapabilityId, Context};
+use crate::Result;
 use crate::domain::{LaserScan, Message, Timestamp};
 use crate::qi::keys;
 use crate::qi::value::as_f32s_lossy;
-use crate::Result;
 use async_trait::async_trait;
 
 /// Default publishing rate in Hz.
@@ -71,7 +71,11 @@ pub fn build_scan(xy: &[f32], stamp: Timestamp) -> LaserScan {
                 xy.get(cluster - step).copied().unwrap_or(HOLE),
                 xy.get(cluster - step + 1).copied().unwrap_or(HOLE),
             );
-            let offset_x = if rotation == 0.0 { FRONT_OFFSET_X } else { OFFSET_X };
+            let offset_x = if rotation == 0.0 {
+                FRONT_OFFSET_X
+            } else {
+                OFFSET_X
+            };
             let (sin, cos) = rotation.sin_cos();
             let bx = lx * cos - ly * sin + offset_x;
             let by = lx * sin + ly * cos + offset_y;

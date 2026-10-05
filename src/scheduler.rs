@@ -13,7 +13,8 @@ use std::sync::{Arc, Mutex};
 pub type Gate = Arc<dyn Fn() -> bool + Send + Sync>;
 
 /// The periodic work of one capability.
-pub type Work = Arc<dyn Fn() -> futures::future::BoxFuture<'static, crate::Result<()>> + Send + Sync>;
+pub type Work =
+    Arc<dyn Fn() -> futures::future::BoxFuture<'static, crate::Result<()>> + Send + Sync>;
 
 #[derive(Clone)]
 struct Frequency(Arc<Mutex<f32>>);
@@ -43,27 +44,15 @@ pub struct Scheduler {
 impl Scheduler {
     /// Spawns the periodic work of `id` at `hz` ticks per second, or at the
     /// last rate set for `id`.
-    pub fn spawn(
-        &self,
-        transport: Arc<dyn Transport>,
-        id: &str,
-        hz: f32,
-        gate: Gate,
-        work: Work,
-    ) {
+    pub fn spawn(&self, transport: Arc<dyn Transport>, id: &str, hz: f32, gate: Gate, work: Work) {
         let hz = self.frequency(id).unwrap_or(hz);
         self.set_frequency(id, hz);
         let frequency = Frequency::new(hz);
-        let task = tokio::spawn(run_job(
-            transport,
-            Arc::clone(&frequency.0),
-            gate,
-            work,
-        ));
-        self.jobs.lock().unwrap_or_else(|err| err.into_inner()).insert(
-            id.to_owned(),
-            Job { frequency, task },
-        );
+        let task = tokio::spawn(run_job(transport, Arc::clone(&frequency.0), gate, work));
+        self.jobs
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .insert(id.to_owned(), Job { frequency, task });
     }
 
     /// Changes the tick rate of `id`, now or when its job spawns.
@@ -72,7 +61,12 @@ impl Scheduler {
             .lock()
             .unwrap_or_else(|err| err.into_inner())
             .insert(id.to_owned(), hz);
-        if let Some(job) = self.jobs.lock().unwrap_or_else(|err| err.into_inner()).get(id) {
+        if let Some(job) = self
+            .jobs
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .get(id)
+        {
             job.frequency.set(hz);
         }
     }
@@ -87,7 +81,12 @@ impl Scheduler {
 
     /// Stops all periodic work.
     pub fn shutdown(&self) {
-        for job in self.jobs.lock().unwrap_or_else(|err| err.into_inner()).values() {
+        for job in self
+            .jobs
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .values()
+        {
             job.task.abort();
         }
     }

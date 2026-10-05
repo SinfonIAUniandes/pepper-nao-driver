@@ -1,9 +1,9 @@
 //! TF frames: `odom`, `base_link`, `torso` and the head / camera chain.
 
 use super::{Capability, CapabilityId, Context};
+use crate::Result;
 use crate::domain::{Message, Pose3, Transform};
 use crate::qi::services::ReferenceFrame;
-use crate::Result;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -84,8 +84,7 @@ impl Capability for Tf {
         let motion = &ctx.robot.motion;
         let names = motion.get_body_names("Body").await?;
         let angles = motion.get_angles("Body", true).await?;
-        let positions: HashMap<String, f32> =
-            names.into_iter().zip(angles).collect();
+        let positions: HashMap<String, f32> = names.into_iter().zip(angles).collect();
 
         let world_t_torso = pose_from_position(
             &motion
@@ -109,9 +108,15 @@ impl Capability for Tf {
         transforms.push(base_t_torso);
 
         for frame in CHILD_FRAMES {
-            let Some((parent, pose)) = ctx.assets.robot_model.link_pose_in_parent(frame, &positions)
+            let Some((parent, pose)) = ctx
+                .assets
+                .robot_model
+                .link_pose_in_parent(frame, &positions)
             else {
-                return Err(crate::Error::invalid("tf", format!("no URDF chain to {frame}")));
+                return Err(crate::Error::invalid(
+                    "tf",
+                    format!("no URDF chain to {frame}"),
+                ));
             };
             transforms.push(transform(&parent, frame, pose));
         }
@@ -143,8 +148,8 @@ fn transform(parent: &str, child: &str, pose: Pose3) -> Transform {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
 
     #[test]
@@ -186,7 +191,10 @@ mod tests {
         let motion = harness.fakes.service("ALMotion");
         motion.script("getBodyNames", vec!["HeadYaw".to_owned()].into_value());
         motion.script("getAngles", vec![0.0f32].into_value());
-        motion.script("getPosition", vec![1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0].into_value());
+        motion.script(
+            "getPosition",
+            vec![1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0].into_value(),
+        );
         let tf = Tf::default();
         tf.tick(&harness.ctx).await.expect("tick");
 
@@ -195,7 +203,10 @@ mod tests {
             panic!("expected transforms");
         };
         assert!(transforms.iter().all(|t| t.child != "base_link"));
-        assert_eq!(tf.buffer.lookup("base_link").expect("buffered").parent, "odom");
+        assert_eq!(
+            tf.buffer.lookup("base_link").expect("buffered").parent,
+            "odom"
+        );
     }
 
     #[tokio::test]
@@ -206,7 +217,10 @@ mod tests {
         let motion = harness.fakes.service("ALMotion");
         motion.script("getBodyNames", vec!["HeadYaw".to_owned()].into_value());
         motion.script("getAngles", vec![0.0f32].into_value());
-        motion.script("getPosition", vec![1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0].into_value());
+        motion.script(
+            "getPosition",
+            vec![1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0].into_value(),
+        );
         Tf::default().tick(&ctx).await.expect("tick");
 
         let published = harness.transport.published_on("tf");

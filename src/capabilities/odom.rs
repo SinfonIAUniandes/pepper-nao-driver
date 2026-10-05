@@ -1,9 +1,9 @@
 //! Odometry of the robot base.
 
 use super::{Capability, CapabilityId, Context};
+use crate::Result;
 use crate::domain::{Message, Odometry, Pose3, Quaternion, Twist, Vector3};
 use crate::qi::services::ReferenceFrame;
-use crate::Result;
 use async_trait::async_trait;
 
 /// Default publishing rate in Hz.
@@ -69,10 +69,9 @@ pub fn pose_from_position(position: &[f32]) -> Result<Pose3> {
 /// Converts `[vx, vy, vz, wx, wy, wz]` into a planar twist.
 pub fn twist_from_velocity(velocity: &[f32]) -> Result<Twist> {
     let value = |index: usize| {
-        velocity
-            .get(index)
-            .copied()
-            .ok_or_else(|| crate::Error::qi_value("ALMotion.getRobotVelocity", "fewer than 6 values"))
+        velocity.get(index).copied().ok_or_else(|| {
+            crate::Error::qi_value("ALMotion.getRobotVelocity", "fewer than 6 values")
+        })
     };
     Ok(Twist {
         vx: value(0)?,
@@ -84,8 +83,8 @@ pub fn twist_from_velocity(velocity: &[f32]) -> Result<Twist> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
 
     #[test]
@@ -100,7 +99,14 @@ mod tests {
     #[test]
     fn twist_conversion_keeps_vx_vy_wz() {
         let twist = twist_from_velocity(&[1.0, 2.0, 0.0, 0.0, 0.0, 0.3]).expect("twist");
-        assert_eq!(twist, Twist { vx: 1.0, vy: 2.0, wz: 0.3 });
+        assert_eq!(
+            twist,
+            Twist {
+                vx: 1.0,
+                vy: 2.0,
+                wz: 0.3
+            }
+        );
         assert!(twist_from_velocity(&[1.0]).is_err());
     }
 
@@ -108,7 +114,10 @@ mod tests {
     async fn tick_publishes_pose_and_twist() {
         let harness = Harness::default();
         let motion = harness.fakes.service("ALMotion");
-        motion.script("getPosition", vec![1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0].into_value());
+        motion.script(
+            "getPosition",
+            vec![1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0].into_value(),
+        );
         motion.script(
             "getRobotVelocity",
             vec![0.1f32, 0.0, 0.0, 0.0, 0.0, 0.2].into_value(),

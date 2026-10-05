@@ -1,9 +1,9 @@
 //! Sound source localization from `ALSoundLocalization/SoundLocated`.
 
 use super::{Capability, CapabilityId, Context};
+use crate::Result;
 use crate::domain::{Message, SoundBearing};
 use crate::qi::keys;
-use crate::Result;
 use async_trait::async_trait;
 
 /// Publishes the bearing of localized sounds.
@@ -17,13 +17,17 @@ impl Capability for MicLocalization {
 
     async fn enable(&self, ctx: &Context) -> Result<()> {
         let transport = ctx.transport.clone();
-        ctx.toolkit.sound_located().set(move |mut bearing: SoundBearing| {
-            bearing.stamp = transport.now();
-            if let Err(err) = transport.publish(CapabilityId::MicLocalization.as_str(), Message::SoundBearing(bearing))
-            {
-                tracing::warn!(error = %err, "sound bearing publish failed");
-            }
-        });
+        ctx.toolkit
+            .sound_located()
+            .set(move |mut bearing: SoundBearing| {
+                bearing.stamp = transport.now();
+                if let Err(err) = transport.publish(
+                    CapabilityId::MicLocalization.as_str(),
+                    Message::SoundBearing(bearing),
+                ) {
+                    tracing::warn!(error = %err, "sound bearing publish failed");
+                }
+            });
         ctx.robot
             .memory
             .subscribe_to_event(
@@ -49,8 +53,8 @@ impl Capability for MicLocalization {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use crate::qi::value::Raw;
     use qi::object::Object;
     use qi::value::IntoValue;
@@ -91,12 +95,14 @@ mod tests {
         let memory = harness.fakes.service("ALMemory");
         assert_eq!(
             memory.calls_to("subscribeToEvent"),
-            vec![(
-                keys::SOUND_LOCATED.to_owned(),
-                "ROS-DriverALSoundLocalization/SoundLocated".to_owned(),
-                "soundLocatedCallback".to_owned()
-            )
-                .into_value()]
+            vec![
+                (
+                    keys::SOUND_LOCATED.to_owned(),
+                    "ROS-DriverALSoundLocalization/SoundLocated".to_owned(),
+                    "soundLocatedCallback".to_owned()
+                )
+                    .into_value()
+            ]
         );
 
         let published = harness.transport.published_on("miclocalization");
@@ -122,15 +128,14 @@ mod tests {
         let memory = harness.fakes.service("ALMemory");
         assert_eq!(
             memory.calls_to("unsubscribeToEvent"),
-            vec![(
-                keys::SOUND_LOCATED.to_owned(),
-                "ROS-DriverALSoundLocalization/SoundLocated".to_owned()
-            )
-                .into_value()]
+            vec![
+                (
+                    keys::SOUND_LOCATED.to_owned(),
+                    "ROS-DriverALSoundLocalization/SoundLocated".to_owned()
+                )
+                    .into_value()
+            ]
         );
-        assert!(harness
-            .transport
-            .published_on("miclocalization")
-            .is_empty());
+        assert!(harness.transport.published_on("miclocalization").is_empty());
     }
 }

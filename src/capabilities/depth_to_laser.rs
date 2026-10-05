@@ -3,10 +3,10 @@
 //! The driver only reads the module keys; range computation lives outside.
 
 use super::{Capability, CapabilityId, Configuration, ConfigurationResult, Context};
+use crate::Result;
 use crate::domain::{DepthToLaserParams, LaserScan, Message};
 use crate::qi::keys;
 use crate::qi::value::{as_f32, as_f32s};
-use crate::Result;
 use async_trait::async_trait;
 use std::sync::Mutex;
 
@@ -109,14 +109,22 @@ impl Capability for DepthToLaser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
 
     fn script_module(harness: &Harness) {
         let memory = harness.fakes.service("ALMemory");
-        memory.script_for("getData", keys::DEPTH2LASER_RANGES, vec![1.0f32, 2.0].into_value());
-        memory.script_for("getData", keys::DEPTH2LASER_MIN_ANGLE, (-1.0f32).into_value());
+        memory.script_for(
+            "getData",
+            keys::DEPTH2LASER_RANGES,
+            vec![1.0f32, 2.0].into_value(),
+        );
+        memory.script_for(
+            "getData",
+            keys::DEPTH2LASER_MIN_ANGLE,
+            (-1.0f32).into_value(),
+        );
         memory.script_for("getData", keys::DEPTH2LASER_MAX_ANGLE, 1.0f32.into_value());
         memory.script_for("getData", keys::DEPTH2LASER_NUM_RANGES, 2.0f32.into_value());
         memory.script_for("getData", keys::DEPTH2LASER_MAX_RANGE, 5.0f32.into_value());

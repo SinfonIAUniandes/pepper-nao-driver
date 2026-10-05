@@ -5,9 +5,9 @@
 
 use super::events::{self, FaceEvent, RemoteAudio, WordRecognized};
 use super::value::Raw;
-use crate::domain::{Touch, SoundBearing};
+use crate::domain::{SoundBearing, Touch};
 use async_trait::async_trait;
-use qi::object::{MemberIdent, MetaMethod, MetaObject, Object, ACTION_START_ID};
+use qi::object::{ACTION_START_ID, MemberIdent, MetaMethod, MetaObject, Object};
 use qi::value::{FromValue, IntoValue, Type, Value};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -92,8 +92,11 @@ impl Toolkit {
         if name.is_empty() {
             return "error: transport name must not be empty".to_owned();
         }
-        *self.0.attached_transport.lock().unwrap_or_else(|err| err.into_inner()) =
-            Some(name.to_owned());
+        *self
+            .0
+            .attached_transport
+            .lock()
+            .unwrap_or_else(|err| err.into_inner()) = Some(name.to_owned());
         "ok".to_owned()
     }
 
@@ -154,7 +157,11 @@ fn build_meta() -> MetaObject {
         builder.add_method(method.build());
     };
     add("_whoWillWin", &[], Some(Type::String));
-    add("attach-transport", &[Some(Type::String)], Some(Type::String));
+    add(
+        "attach-transport",
+        &[Some(Type::String)],
+        Some(Type::String),
+    );
     add("startPublishing", &[], Some(Type::Unit));
     add("touchCallback", &CALLBACK_PARAMS, Some(Type::Unit));
     add("wordRecognizedCallback", &CALLBACK_PARAMS, Some(Type::Unit));
@@ -227,7 +234,8 @@ impl Object for Toolkit {
                 }
             }),
             "processRemote" => {
-                let (channels, samples, _timestamp, buffer): (i32, i32, Raw, Raw) = decode_args(args)?;
+                let (channels, samples, _timestamp, buffer): (i32, i32, Raw, Raw) =
+                    decode_args(args)?;
                 if let Some(audio) = events::decode_audio(channels, samples, &buffer.into_inner()) {
                     self.0.audio.dispatch(audio);
                 }
@@ -355,9 +363,6 @@ mod tests {
     #[tokio::test]
     async fn unknown_methods_are_rejected() {
         let toolkit = Toolkit::default();
-        assert!(toolkit
-            .meta_call("nope".into(), Value::Unit)
-            .await
-            .is_err());
+        assert!(toolkit.meta_call("nope".into(), Value::Unit).await.is_err());
     }
 }

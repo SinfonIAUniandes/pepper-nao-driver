@@ -105,9 +105,7 @@ pub fn decode_face_event(value: &Value<'_>) -> Option<FaceEvent> {
             .map(|face| {
                 let face = super::value::plain(face.clone());
                 match face {
-                    Value::List(parts) | Value::Tuple(parts) => {
-                        as_f32s(&parts.first()?.clone())
-                    }
+                    Value::List(parts) | Value::Tuple(parts) => as_f32s(&parts.first()?.clone()),
                     _ => None,
                 }
             })
@@ -129,7 +127,11 @@ pub fn decode_result(value: &Value<'_>) -> Option<String> {
 }
 
 /// Decodes the `processRemote` arguments of the microphone client.
-pub fn decode_audio(channels: i32, samples_per_channel: i32, buffer: &Value<'_>) -> Option<RemoteAudio> {
+pub fn decode_audio(
+    channels: i32,
+    samples_per_channel: i32,
+    buffer: &Value<'_>,
+) -> Option<RemoteAudio> {
     let raw = as_bytes(buffer)?;
     let data: Vec<i16> = raw
         .chunks_exact(2)
@@ -159,9 +161,11 @@ mod tests {
         let touch = decode_touch("RightBumperPressed", &1.0f32.into_value()).expect("touch");
         assert_eq!(touch.id, TouchId::BumperRight);
         assert!(touch.pressed);
-        assert!(!decode_touch("RightBumperPressed", &0.0f32.into_value())
-            .expect("touch")
-            .pressed);
+        assert!(
+            !decode_touch("RightBumperPressed", &0.0f32.into_value())
+                .expect("touch")
+                .pressed
+        );
         assert!(decode_touch("NoSuchKey", &1.0f32.into_value()).is_none());
     }
 

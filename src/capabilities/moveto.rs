@@ -1,9 +1,9 @@
 //! Relative walk commands.
 
-use super::{message_handler, Capability, CapabilityId, Context};
+use super::{Capability, CapabilityId, Context, message_handler};
+use crate::Result;
 use crate::domain::{Message, Pose2};
 use crate::transport::Subscription;
-use crate::Result;
 use async_trait::async_trait;
 use std::sync::Mutex;
 
@@ -74,8 +74,8 @@ async fn walk(robot: &crate::qi::Robot, goal: Pose2) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
     use std::time::Duration;
 
@@ -110,6 +110,12 @@ mod tests {
             .inject("moveto", Message::MoveTo(Pose2::new(1.0, -2.0, 0.5)));
         settle().await;
 
-        assert!(harness.fakes.service("ALMotion").calls_to("moveTo").is_empty());
+        assert!(
+            harness
+                .fakes
+                .service("ALMotion")
+                .calls_to("moveTo")
+                .is_empty()
+        );
     }
 }

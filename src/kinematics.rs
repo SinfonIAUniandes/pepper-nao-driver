@@ -111,10 +111,7 @@ impl RobotModel {
         angles: &HashMap<String, f32>,
     ) -> Option<(String, crate::domain::Pose3)> {
         let joint = &self.joints[*self.by_child_link.get(link)?];
-        Some((
-            joint.parent.clone(),
-            self.joint_transform(joint, angles),
-        ))
+        Some((joint.parent.clone(), self.joint_transform(joint, angles)))
     }
 
     /// Pose of `link` expressed in `root`, given joint positions by name.
@@ -168,7 +165,8 @@ impl RobotModel {
     fn joint_displacement(&self, joint: &Joint, angles: &HashMap<String, f32>) -> f32 {
         match &joint.mimic {
             Some(mimic) => {
-                self.joint_displacement_named(&mimic.joint, angles) * mimic.multiplier + mimic.offset
+                self.joint_displacement_named(&mimic.joint, angles) * mimic.multiplier
+                    + mimic.offset
             }
             None => angles.get(&joint.name).copied().unwrap_or(0.0),
         }
@@ -226,10 +224,8 @@ impl PendingJoint {
             b"parent" => self.parent = attribute(b"link"),
             b"child" => self.child = attribute(b"link"),
             b"origin" => {
-                self.origin = parse_pose(
-                    attribute(b"xyz").as_deref(),
-                    attribute(b"rpy").as_deref(),
-                );
+                self.origin =
+                    parse_pose(attribute(b"xyz").as_deref(), attribute(b"rpy").as_deref());
             }
             b"axis" => {
                 self.axis = parse_vector(attribute(b"xyz").as_deref())
@@ -373,9 +369,11 @@ mod tests {
     #[test]
     fn disconnected_links_yield_none() {
         let model = model();
-        assert!(model
-            .link_pose("torso", "no_such_link", &HashMap::new())
-            .is_none());
+        assert!(
+            model
+                .link_pose("torso", "no_such_link", &HashMap::new())
+                .is_none()
+        );
     }
 
     #[test]

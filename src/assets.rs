@@ -35,11 +35,23 @@ impl Assets {
             .map_err(|err| Error::Asset(format!("cannot read pepper.urdf: {err}")))?;
         let mut camera_info = HashMap::new();
         for (camera, file, frame) in [
-            (crate::domain::CameraId::Front, "top_camera_info.json", "CameraTop_optical_frame"),
-            (crate::domain::CameraId::Bottom, "bottom_camera_info.json", "CameraBottom_optical_frame"),
+            (
+                crate::domain::CameraId::Front,
+                "top_camera_info.json",
+                "CameraTop_optical_frame",
+            ),
+            (
+                crate::domain::CameraId::Bottom,
+                "bottom_camera_info.json",
+                "CameraBottom_optical_frame",
+            ),
             // The depth camera publishes the top camera calibration, matching
             // the frame used by the original toolkit.
-            (crate::domain::CameraId::Depth, "depth_camera_info.json", "CameraTop_optical_frame"),
+            (
+                crate::domain::CameraId::Depth,
+                "depth_camera_info.json",
+                "CameraTop_optical_frame",
+            ),
         ] {
             let path = root.join("camera_info").join(file);
             let raw = std::fs::read_to_string(&path)

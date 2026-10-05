@@ -1,8 +1,8 @@
 //! Velocity commands with a stop watchdog.
 
 use super::{Capability, CapabilityId, Configuration, ConfigurationResult, Context};
-use crate::domain::{Message, Twist};
 use crate::Result;
+use crate::domain::{Message, Twist};
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -101,7 +101,12 @@ impl Capability for CmdVel {
     }
 
     async fn disable(&self, ctx: &Context) -> Result<()> {
-        if let Some(task) = self.task.lock().unwrap_or_else(|err| err.into_inner()).take() {
+        if let Some(task) = self
+            .task
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .take()
+        {
             task.abort();
         }
         // Disabling must leave the robot stopped.
@@ -126,8 +131,8 @@ impl Capability for CmdVel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
 
     fn moves(harness: &Harness) -> Vec<Value<'static>> {
@@ -158,7 +163,11 @@ mod tests {
         cmd_vel.enable(&harness.ctx).await.expect("enable");
         harness.transport.inject(
             "cmd_vel",
-            Message::CmdVel(Twist { vx: 0.5, vy: 0.0, wz: 0.1 }),
+            Message::CmdVel(Twist {
+                vx: 0.5,
+                vy: 0.0,
+                wz: 0.1,
+            }),
         );
         wait_for_moves(&harness, 1).await;
         assert_eq!(moves(&harness)[0], (0.5f32, 0.0f32, 0.1f32).into_value());
@@ -171,7 +180,11 @@ mod tests {
         cmd_vel.enable(&harness.ctx).await.expect("enable");
         harness.transport.inject(
             "cmd_vel",
-            Message::CmdVel(Twist { vx: 0.5, vy: 0.0, wz: 0.0 }),
+            Message::CmdVel(Twist {
+                vx: 0.5,
+                vy: 0.0,
+                wz: 0.0,
+            }),
         );
         wait_for_moves(&harness, 1).await;
 
@@ -191,7 +204,11 @@ mod tests {
         cmd_vel.enable(&harness.ctx).await.expect("enable");
         harness.transport.inject(
             "cmd_vel",
-            Message::CmdVel(Twist { vx: 0.5, vy: 0.0, wz: 0.0 }),
+            Message::CmdVel(Twist {
+                vx: 0.5,
+                vy: 0.0,
+                wz: 0.0,
+            }),
         );
         wait_for_moves(&harness, 1).await;
 

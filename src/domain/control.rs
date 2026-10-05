@@ -1,8 +1,6 @@
 //! Control RPC payloads, one entry per tool group.
 
-use super::{
-    CameraConfig, CameraId, CameraParams, DepthToLaserParams, MicConfig, SpeechParams,
-};
+use super::{CameraConfig, CameraId, CameraParams, DepthToLaserParams, MicConfig, SpeechParams};
 
 /// Control request, as delivered by the transport RPC channel.
 #[derive(Clone, Debug, PartialEq)]
@@ -126,7 +124,10 @@ impl CameraTarget {
     }
 
     pub fn is_face_detector(self) -> bool {
-        matches!(self, Self::FrontCameraFaceDetector | Self::BottomCameraFaceDetector)
+        matches!(
+            self,
+            Self::FrontCameraFaceDetector | Self::BottomCameraFaceDetector
+        )
     }
 }
 
@@ -163,7 +164,10 @@ pub enum AudioCommand {
 pub enum MotionCommand {
     EnableAll,
     DisableAll,
-    Custom { animation: Switch, set_angles: Switch },
+    Custom {
+        animation: Switch,
+        set_angles: Switch,
+    },
 }
 
 /// Commands of `misc_tools`.

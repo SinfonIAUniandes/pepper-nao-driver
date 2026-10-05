@@ -111,7 +111,11 @@ impl Transport for MemoryTransport {
             .push((id, handler));
         let (state, topic) = (Arc::clone(&self.inner), topic.to_owned());
         Subscription::on_cancel(move || {
-            if let Some(entries) = state.lock().unwrap_or_else(|e| e.into_inner()).handlers.get_mut(&topic)
+            if let Some(entries) = state
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .handlers
+                .get_mut(&topic)
             {
                 entries.retain(|(entry_id, _)| *entry_id != id);
             }
@@ -125,7 +129,11 @@ impl Transport for MemoryTransport {
         inner.rpcs.insert(name.to_owned(), (id, handler));
         let (state, name) = (Arc::clone(&self.inner), name.to_owned());
         Subscription::on_cancel(move || {
-            state.lock().unwrap_or_else(|e| e.into_inner()).rpcs.remove(&name);
+            state
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .rpcs
+                .remove(&name);
         })
     }
 
@@ -190,10 +198,12 @@ mod tests {
         assert_eq!(response, Some(ControlResponse::ok()));
 
         drop(subscription);
-        assert!(transport
-            .call_rpc("misc_tools", ControlRequest::Misc(MiscCommand::EnableAll))
-            .await
-            .is_none());
+        assert!(
+            transport
+                .call_rpc("misc_tools", ControlRequest::Misc(MiscCommand::EnableAll))
+                .await
+                .is_none()
+        );
     }
 
     #[tokio::test(start_paused = true)]

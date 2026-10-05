@@ -3,6 +3,7 @@
 //! Commands always succeed on the channel; failures are reported in the result
 //! string of the response.
 
+use crate::Result;
 use crate::capabilities::{CapabilityId, Configuration, ConfigurationResult};
 use crate::domain::{
     AudioCommand, ControlParams, ControlRequest, ControlResponse, DepthToLaserSetting,
@@ -11,7 +12,6 @@ use crate::domain::{
 };
 use crate::driver::Driver;
 use crate::shm::Segment;
-use crate::Result;
 
 /// The control RPC names, in tool order.
 pub const RPC_NAMES: [&str; 6] = [
@@ -87,13 +87,25 @@ async fn navigation(driver: &Driver, command: NavigationCommand) -> Result<Param
     match command {
         NavigationCommand::EnableMapper => {
             set_group(driver, &MAPPER, true).await?;
-            driver.context().shm.set_enabled(Segment::PepperHead, true)?;
-            driver.context().shm.set_enabled(Segment::Depth2Laser, true)?;
+            driver
+                .context()
+                .shm
+                .set_enabled(Segment::PepperHead, true)?;
+            driver
+                .context()
+                .shm
+                .set_enabled(Segment::Depth2Laser, true)?;
         }
         NavigationCommand::DisableMapper => {
             set_group(driver, &MAPPER, false).await?;
-            driver.context().shm.set_enabled(Segment::PepperHead, false)?;
-            driver.context().shm.set_enabled(Segment::Depth2Laser, false)?;
+            driver
+                .context()
+                .shm
+                .set_enabled(Segment::PepperHead, false)?;
+            driver
+                .context()
+                .shm
+                .set_enabled(Segment::Depth2Laser, false)?;
         }
         NavigationCommand::EnableNavigate => {
             for segment in [
@@ -119,11 +131,17 @@ async fn navigation(driver: &Driver, command: NavigationCommand) -> Result<Param
         }
         NavigationCommand::EnableAll => {
             set_group(driver, &ALL, true).await?;
-            driver.context().shm.set_enabled(Segment::Depth2Laser, true)?;
+            driver
+                .context()
+                .shm
+                .set_enabled(Segment::Depth2Laser, true)?;
         }
         NavigationCommand::DisableAll => {
             set_group(driver, &ALL, false).await?;
-            driver.context().shm.set_enabled(Segment::Depth2Laser, false)?;
+            driver
+                .context()
+                .shm
+                .set_enabled(Segment::Depth2Laser, false)?;
         }
         NavigationCommand::Custom(custom) => custom_navigation(driver, custom).await?,
     }
@@ -141,7 +159,10 @@ async fn custom_navigation(driver: &Driver, custom: NavigationCustom) -> Result<
     toggle(driver, CapabilityId::CmdVel, custom.cmd_vel.enable).await?;
     if custom.cmd_vel.enable {
         driver
-            .configure(CapabilityId::CmdVel, Configuration::CmdVel(custom.cmd_vel.security_timer))
+            .configure(
+                CapabilityId::CmdVel,
+                Configuration::CmdVel(custom.cmd_vel.security_timer),
+            )
             .await?;
     }
     toggle(driver, CapabilityId::MoveTo, custom.moveto).await?;
@@ -154,13 +175,20 @@ async fn custom_navigation(driver: &Driver, custom: NavigationCustom) -> Result<
     toggle(driver, CapabilityId::DepthToLaser, enable).await?;
     if enable {
         driver
-            .configure(CapabilityId::DepthToLaser, Configuration::DepthToLaser(params))
+            .configure(
+                CapabilityId::DepthToLaser,
+                Configuration::DepthToLaser(params),
+            )
             .await?;
     }
     Ok(())
 }
 
-async fn frequency_setting(driver: &Driver, id: CapabilityId, setting: &FrequencySetting) -> Result<()> {
+async fn frequency_setting(
+    driver: &Driver,
+    id: CapabilityId,
+    setting: &FrequencySetting,
+) -> Result<()> {
     toggle(driver, id, setting.enable).await?;
     if setting.enable {
         driver.set_frequency(id, setting.frequency);
@@ -254,13 +282,21 @@ async fn audio(driver: &Driver, command: AudioCommand) -> Result<Params> {
     use AudioCommand::*;
     match command {
         Enable => {
-            for id in [CapabilityId::Mic, CapabilityId::Speech, CapabilityId::MicLocalization] {
+            for id in [
+                CapabilityId::Mic,
+                CapabilityId::Speech,
+                CapabilityId::MicLocalization,
+            ] {
                 driver.enable(id).await?;
             }
             Ok(None)
         }
         Disable => {
-            for id in [CapabilityId::Mic, CapabilityId::Speech, CapabilityId::MicLocalization] {
+            for id in [
+                CapabilityId::Mic,
+                CapabilityId::Speech,
+                CapabilityId::MicLocalization,
+            ] {
                 driver.disable(id).await?;
             }
             Ok(None)
@@ -379,8 +415,8 @@ async fn switch(driver: &Driver, id: CapabilityId, setting: Switch) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::{shm_lock, Harness, Recording};
     use crate::capabilities::ConfigurationResult;
+    use crate::capabilities::support::{Harness, Recording, shm_lock};
     use crate::domain::{CameraParams, CameraTarget, SpeechParams};
 
     /// A driver wired to recording doubles for every capability it addresses.
@@ -391,7 +427,10 @@ mod tests {
             .collect();
         let driver = Driver::new(
             harness.ctx.clone(),
-            doubles.iter().map(|double| double.clone() as Arc<dyn Capability>).collect(),
+            doubles
+                .iter()
+                .map(|double| double.clone() as Arc<dyn Capability>)
+                .collect(),
         );
         (driver, doubles)
     }
@@ -404,7 +443,11 @@ mod tests {
         let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
-        let response = dispatch(&driver, ControlRequest::Navigation(NavigationCommand::EnableMapper)).await;
+        let response = dispatch(
+            &driver,
+            ControlRequest::Navigation(NavigationCommand::EnableMapper),
+        )
+        .await;
         assert_eq!(response.result, "ok");
 
         for id in [
@@ -428,7 +471,11 @@ mod tests {
         let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
-        dispatch(&driver, ControlRequest::Navigation(NavigationCommand::EnableAll)).await;
+        dispatch(
+            &driver,
+            ControlRequest::Navigation(NavigationCommand::EnableAll),
+        )
+        .await;
 
         assert!(driver.is_enabled(CapabilityId::MoveTo));
         assert!(driver.is_enabled(CapabilityId::FreeZone));
@@ -442,11 +489,19 @@ mod tests {
         let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
-        dispatch(&driver, ControlRequest::Navigation(NavigationCommand::EnableNavigate)).await;
+        dispatch(
+            &driver,
+            ControlRequest::Navigation(NavigationCommand::EnableNavigate),
+        )
+        .await;
         assert!(driver.is_enabled(CapabilityId::NavigationPath));
         assert!(harness.ctx.shm.enabled(Segment::Planner));
 
-        dispatch(&driver, ControlRequest::Navigation(NavigationCommand::DisableNavigate)).await;
+        dispatch(
+            &driver,
+            ControlRequest::Navigation(NavigationCommand::DisableNavigate),
+        )
+        .await;
         assert!(!driver.is_enabled(CapabilityId::NavigationPath));
         assert!(!harness.ctx.shm.enabled(Segment::Planner));
     }
@@ -491,7 +546,11 @@ mod tests {
             result: false,
             free_zone: true,
         };
-        dispatch(&driver, ControlRequest::Navigation(NavigationCommand::Custom(custom))).await;
+        dispatch(
+            &driver,
+            ControlRequest::Navigation(NavigationCommand::Custom(custom)),
+        )
+        .await;
 
         assert!(driver.is_enabled(CapabilityId::Tf));
         assert!(!driver.is_enabled(CapabilityId::Odom));
@@ -528,7 +587,11 @@ mod tests {
             ConfigurationResult::SpeechParams(params),
         );
         let driver = Driver::new(harness.ctx.clone(), vec![speech]);
-        let response = dispatch(&driver, ControlRequest::Audio(AudioCommand::GetSpeechParams)).await;
+        let response = dispatch(
+            &driver,
+            ControlRequest::Audio(AudioCommand::GetSpeechParams),
+        )
+        .await;
         assert_eq!(response.result, "ok");
         assert_eq!(response.params, Some(ControlParams::Speech(params)));
     }
@@ -582,7 +645,10 @@ mod tests {
         .await;
         assert!(driver.is_enabled(CapabilityId::FrontCamera));
         assert_eq!(driver.frequency(CapabilityId::FrontCamera), Some(10.0));
-        assert_eq!(camera.configures.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert_eq!(
+            camera.configures.load(std::sync::atomic::Ordering::Relaxed),
+            1
+        );
 
         let response = dispatch(
             &driver,
@@ -592,7 +658,10 @@ mod tests {
             }),
         )
         .await;
-        assert_eq!(response.params, Some(ControlParams::Camera(CameraParams::default())));
+        assert_eq!(
+            response.params,
+            Some(ControlParams::Camera(CameraParams::default()))
+        );
 
         dispatch(
             &driver,
@@ -646,9 +715,7 @@ mod tests {
 
         dispatch(
             &driver,
-            ControlRequest::Audio(AudioCommand::Custom(
-                crate::domain::MicConfig::DEFAULT,
-            )),
+            ControlRequest::Audio(AudioCommand::Custom(crate::domain::MicConfig::DEFAULT)),
         )
         .await;
         assert!(driver.is_enabled(CapabilityId::Mic));
@@ -679,6 +746,10 @@ mod tests {
         let harness = Harness::default();
         let driver = Driver::new(harness.ctx.clone(), vec![]);
         let response = dispatch(&driver, ControlRequest::Misc(MiscCommand::EnableAll)).await;
-        assert!(response.result.contains("unknown id"), "{}", response.result);
+        assert!(
+            response.result.contains("unknown id"),
+            "{}",
+            response.result
+        );
     }
 }

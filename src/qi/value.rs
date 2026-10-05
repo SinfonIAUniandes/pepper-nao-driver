@@ -1,8 +1,6 @@
 //! Decoding of NAOqi dynamic values into plain values and domain scalars.
 
-use qi::value::{
-    FromValue, FromValueError, IntoValue, Reflect, ToValue, Type, Value,
-};
+use qi::value::{FromValue, FromValueError, IntoValue, Reflect, ToValue, Type, Value};
 
 /// An owned NAOqi dynamic (`"m"`) value, as carried by event callbacks.
 ///
@@ -143,9 +141,10 @@ pub fn as_texts(value: &Value<'_>) -> Option<Vec<String>> {
 /// Reads a list of floats, mapping non-numeric entries to `-1`.
 pub fn as_f32s_lossy(value: &Value<'_>) -> Vec<f32> {
     match plain(value.clone()) {
-        Value::List(elements) | Value::Tuple(elements) => {
-            elements.iter().map(|element| as_f32(element).unwrap_or(-1.0)).collect()
-        }
+        Value::List(elements) | Value::Tuple(elements) => elements
+            .iter()
+            .map(|element| as_f32(element).unwrap_or(-1.0))
+            .collect(),
         _ => Vec::new(),
     }
 }
@@ -213,11 +212,11 @@ mod tests {
         assert_eq!(as_f32s(&floats.clone().into_value()), Some(floats));
         let tuple = Value::Tuple(vec![1i32.into_value(), 2i32.into_value()]);
         assert_eq!(as_f32s(&tuple), Some(vec![1.0, 2.0]));
-        let texts = Value::List(vec!["a".to_owned().into_value(), dynamic("b".to_owned().into_value())]);
-        assert_eq!(
-            as_texts(&texts),
-            Some(vec!["a".to_owned(), "b".to_owned()])
-        );
+        let texts = Value::List(vec![
+            "a".to_owned().into_value(),
+            dynamic("b".to_owned().into_value()),
+        ]);
+        assert_eq!(as_texts(&texts), Some(vec!["a".to_owned(), "b".to_owned()]));
     }
 
     #[test]

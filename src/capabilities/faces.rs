@@ -1,11 +1,13 @@
 //! Face detection: crops detected faces out of a VGA camera stream.
 
-use super::camera::{camera_frame, decode_image, WireImage};
+use super::camera::{WireImage, camera_frame, decode_image};
 use super::{Capability, CapabilityId, Context};
-use crate::domain::{CameraId, ColorSpace, Face, FaceSet, ImageFrame, Message, Resolution, Timestamp};
+use crate::Result;
+use crate::domain::{
+    CameraId, ColorSpace, Face, FaceSet, ImageFrame, Message, Resolution, Timestamp,
+};
 use crate::qi::events::FaceEvent;
 use crate::qi::keys;
-use crate::Result;
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 
@@ -70,8 +72,9 @@ impl FaceDetector {
             return Ok(());
         };
         let raw = shared.robot.video.get_image_remote(&handle).await?;
-        let image = decode_image(&raw)
-            .ok_or_else(|| crate::Error::qi_value("ALVideoDevice.getImageRemote", "malformed image"))?;
+        let image = decode_image(&raw).ok_or_else(|| {
+            crate::Error::qi_value("ALVideoDevice.getImageRemote", "malformed image")
+        })?;
         let stamp = Timestamp::new(event.stamp[0] as u64, (event.stamp[1] as u32) * 1000);
         let mut faces = Vec::with_capacity(event.faces.len());
         for shape in &event.faces {
@@ -148,7 +151,11 @@ impl Capability for FaceDetector {
                 i32::from(CAMERA_HZ),
             )
             .await?;
-        *self.inner.handle.lock().unwrap_or_else(|err| err.into_inner()) = Some(handle);
+        *self
+            .inner
+            .handle
+            .lock()
+            .unwrap_or_else(|err| err.into_inner()) = Some(handle);
 
         let shared = Arc::new(Shared {
             robot: Arc::clone(&ctx.robot),
@@ -243,8 +250,8 @@ fn crop_rgb(data: &[u8], stride_width: u32, x: u32, y: u32, width: u32, height: 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use crate::qi::value::Raw;
     use qi::value::IntoValue;
     use qi::{Object, Value};
@@ -297,14 +304,23 @@ mod tests {
     #[test]
     fn face_box_centers_and_margins_the_crop() {
         let image = wire_image(100, 100);
-        assert_eq!(face_box(vec![0.5, 0.5], 0.2, 0.2, &image), Some([31, 31, 38, 38]));
+        assert_eq!(
+            face_box(vec![0.5, 0.5], 0.2, 0.2, &image),
+            Some([31, 31, 38, 38])
+        );
     }
 
     #[test]
     fn face_box_clamps_to_the_image() {
         let image = wire_image(100, 100);
-        assert_eq!(face_box(vec![0.0, 0.0], 0.2, 0.2, &image), Some([0, 0, 38, 38]));
-        assert_eq!(face_box(vec![1.0, 1.0], 0.2, 0.2, &image), Some([81, 81, 19, 19]));
+        assert_eq!(
+            face_box(vec![0.0, 0.0], 0.2, 0.2, &image),
+            Some([0, 0, 38, 38])
+        );
+        assert_eq!(
+            face_box(vec![1.0, 1.0], 0.2, 0.2, &image),
+            Some([81, 81, 19, 19])
+        );
         assert_eq!(face_box(vec![2.0, 0.5], 0.2, 0.2, &image), None);
     }
 
@@ -323,11 +339,21 @@ mod tests {
         let harness = Harness::default();
         let video = harness.fakes.service("ALVideoDevice");
         video.script("subscribeCamera", "face-handle".to_owned().into_value());
-        FaceDetector::front().enable(&harness.ctx).await.expect("enable");
+        FaceDetector::front()
+            .enable(&harness.ctx)
+            .await
+            .expect("enable");
 
         assert_eq!(
             video.calls_to("subscribeCamera")[0],
-            ("front_camera_face_detector".to_owned(), 0i32, 2i32, 11i32, 30i32).into_value()
+            (
+                "front_camera_face_detector".to_owned(),
+                0i32,
+                2i32,
+                11i32,
+                30i32
+            )
+                .into_value()
         );
         let memory = harness.fakes.service("ALMemory");
         assert_eq!(
@@ -391,10 +417,12 @@ mod tests {
             .await
             .expect("callback");
         tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-        assert!(harness
-            .transport
-            .published_on("front_camera_face_detector")
-            .is_empty());
+        assert!(
+            harness
+                .transport
+                .published_on("front_camera_face_detector")
+                .is_empty()
+        );
     }
 
     #[tokio::test]

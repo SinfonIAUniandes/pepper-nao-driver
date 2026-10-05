@@ -1,12 +1,12 @@
 //! Planner and localizer bridge: goals and poses in, paths and results out.
 
-use super::{message_handler, Capability, CapabilityId, Context};
+use super::{Capability, CapabilityId, Context, message_handler};
+use crate::Result;
 use crate::domain::{Message, Path, Pose2, Vector3};
 use crate::qi::keys;
 use crate::qi::services::Robot;
 use crate::qi::value::as_f32s;
 use crate::transport::Subscription;
-use crate::Result;
 use async_trait::async_trait;
 use qi::value::{IntoValue, Value};
 use std::sync::Mutex;
@@ -43,12 +43,16 @@ impl Capability for NavigationGoal {
     }
 
     async fn enable(&self, ctx: &Context) -> Result<()> {
-        let subscription = subscribe_pose(ctx, self.id(), keys::PLANNER_GOAL, |message| {
-            match message {
-                Message::NavigationGoal(pose) => Some(*pose),
-                _ => None,
-            }
-        });
+        let subscription =
+            subscribe_pose(
+                ctx,
+                self.id(),
+                keys::PLANNER_GOAL,
+                |message| match message {
+                    Message::NavigationGoal(pose) => Some(*pose),
+                    _ => None,
+                },
+            );
         *self
             .subscription
             .lock()
@@ -91,12 +95,16 @@ impl Capability for PoseSet {
     }
 
     async fn enable(&self, ctx: &Context) -> Result<()> {
-        let subscription = subscribe_pose(ctx, self.id(), keys::LOCALIZER_SET_POSE, |message| {
-            match message {
-                Message::PoseSet(pose) => Some(*pose),
-                _ => None,
-            }
-        });
+        let subscription =
+            subscribe_pose(
+                ctx,
+                self.id(),
+                keys::LOCALIZER_SET_POSE,
+                |message| match message {
+                    Message::PoseSet(pose) => Some(*pose),
+                    _ => None,
+                },
+            );
         *self
             .subscription
             .lock()
@@ -270,8 +278,8 @@ fn localizer_pose(raw: &Value<'_>) -> Option<Vector3> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use crate::qi::value::Raw;
     use qi::object::Object;
     use std::time::Duration;
@@ -326,11 +334,13 @@ mod tests {
 
         assert_eq!(
             raised_events(&harness),
-            vec![(
-                keys::PLANNER_GOAL.to_owned(),
-                vec![1.0f32, 2.0, 0.5].into_value()
-            )
-                .into_value()]
+            vec![
+                (
+                    keys::PLANNER_GOAL.to_owned(),
+                    vec![1.0f32, 2.0, 0.5].into_value()
+                )
+                    .into_value()
+            ]
         );
     }
 
@@ -363,11 +373,13 @@ mod tests {
 
         assert_eq!(
             raised_events(&harness),
-            vec![(
-                keys::LOCALIZER_SET_POSE.to_owned(),
-                vec![3.0f32, 4.0, 1.5].into_value()
-            )
-                .into_value()]
+            vec![
+                (
+                    keys::LOCALIZER_SET_POSE.to_owned(),
+                    vec![3.0f32, 4.0, 1.5].into_value()
+                )
+                    .into_value()
+            ]
         );
     }
 
@@ -457,12 +469,14 @@ mod tests {
             .calls_to("subscribeToEvent");
         assert_eq!(
             subscriptions,
-            vec![(
-                keys::PLANNER_RESULT.to_owned(),
-                keys::callback_service_name(keys::PLANNER_RESULT),
-                "onResultCallback".to_owned()
-            )
-                .into_value()]
+            vec![
+                (
+                    keys::PLANNER_RESULT.to_owned(),
+                    keys::callback_service_name(keys::PLANNER_RESULT),
+                    "onResultCallback".to_owned()
+                )
+                    .into_value()
+            ]
         );
     }
 
@@ -480,10 +494,12 @@ mod tests {
             .await
             .expect("event");
 
-        assert!(harness
-            .transport
-            .published_on("navigation_result")
-            .is_empty());
+        assert!(
+            harness
+                .transport
+                .published_on("navigation_result")
+                .is_empty()
+        );
         assert_eq!(
             harness
                 .fakes

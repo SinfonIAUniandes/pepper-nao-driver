@@ -12,11 +12,17 @@ pub enum Error {
 
     /// A value coming from QI could not be decoded into a domain type.
     #[error("invalid QI value for {context}: {detail}")]
-    QiValue { context: &'static str, detail: String },
+    QiValue {
+        context: &'static str,
+        detail: String,
+    },
 
     /// A command or configuration value is out of range or inconsistent.
     #[error("invalid {context}: {detail}")]
-    Invalid { context: &'static str, detail: String },
+    Invalid {
+        context: &'static str,
+        detail: String,
+    },
 
     /// A required asset (URDF, camera info) is missing or malformed.
     #[error("asset error: {0}")]

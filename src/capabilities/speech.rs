@@ -1,10 +1,12 @@
 //! Text-to-speech and animated speech.
 
-use super::{message_handler, Capability, CapabilityId, Configuration, ConfigurationResult, Context};
+use super::{
+    Capability, CapabilityId, Configuration, ConfigurationResult, Context, message_handler,
+};
+use crate::Result;
 use crate::domain::{Language, Message, SpeechCommand, SpeechParams};
 use crate::qi::Robot;
 use crate::transport::Subscription;
-use crate::Result;
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 
@@ -87,9 +89,9 @@ impl Capability for Speech {
                 apply_params(&ctx.robot, params).await?;
                 Ok(ConfigurationResult::None)
             }
-            Configuration::ReadSpeechParams => {
-                Ok(ConfigurationResult::SpeechParams(read_params(&ctx.robot).await?))
-            }
+            Configuration::ReadSpeechParams => Ok(ConfigurationResult::SpeechParams(
+                read_params(&ctx.robot).await?,
+            )),
             Configuration::ResetSpeechParams => {
                 let params = SpeechParams::defaults(self.language());
                 apply_params(&ctx.robot, params).await?;
@@ -109,7 +111,10 @@ async fn say(robot: &Robot, language: &Mutex<Language>, command: SpeechCommand) 
         return robot.text_to_speech.say(apology).await;
     };
     if requested != *language.lock().unwrap_or_else(|err| err.into_inner()) {
-        robot.text_to_speech.set_language(language_name(requested)).await?;
+        robot
+            .text_to_speech
+            .set_language(language_name(requested))
+            .await?;
         *language.lock().unwrap_or_else(|err| err.into_inner()) = requested;
     }
     if command.animated {
@@ -129,8 +134,10 @@ fn language_name(language: Language) -> &'static str {
 async fn apply_params(robot: &Robot, params: SpeechParams) -> Result<()> {
     let tts = &robot.text_to_speech;
     tts.set_parameter("pitchShift", params.pitch_shift).await?;
-    tts.set_parameter("doubleVoice", params.double_voice).await?;
-    tts.set_parameter("doubleVoiceLevel", params.double_voice_level).await?;
+    tts.set_parameter("doubleVoice", params.double_voice)
+        .await?;
+    tts.set_parameter("doubleVoiceLevel", params.double_voice_level)
+        .await?;
     tts.set_parameter("doubleVoiceTimeShift", params.double_voice_time_shift)
         .await?;
     tts.set_parameter("speed", params.speed).await
@@ -150,8 +157,8 @@ async fn read_params(robot: &Robot) -> Result<SpeechParams> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
     use std::time::Duration;
 
@@ -164,9 +171,7 @@ mod tests {
     }
 
     async fn say_now(harness: &Harness, command: SpeechCommand) {
-        harness
-            .transport
-            .inject("speech", Message::Speech(command));
+        harness.transport.inject("speech", Message::Speech(command));
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
 
@@ -175,7 +180,10 @@ mod tests {
     }
 
     fn set_languages(harness: &Harness) -> Vec<qi::value::Value<'static>> {
-        harness.fakes.service("ALTextToSpeech").calls_to("setLanguage")
+        harness
+            .fakes
+            .service("ALTextToSpeech")
+            .calls_to("setLanguage")
     }
 
     #[tokio::test]
@@ -190,7 +198,10 @@ mod tests {
 
         assert_eq!(
             set_languages(&harness),
-            vec!["Spanish".to_owned().into_value(), "English".to_owned().into_value()]
+            vec![
+                "Spanish".to_owned().into_value(),
+                "English".to_owned().into_value()
+            ]
         );
         assert_eq!(
             harness.fakes.service("ALAnimatedSpeech").calls_to("say"),
@@ -198,7 +209,10 @@ mod tests {
         );
         assert_eq!(
             texts(&harness),
-            vec!["hola".to_owned().into_value(), "adios".to_owned().into_value()]
+            vec![
+                "hola".to_owned().into_value(),
+                "adios".to_owned().into_value()
+            ]
         );
     }
 
@@ -221,7 +235,10 @@ mod tests {
             ]
         );
         // The apology never touches the voice language.
-        assert_eq!(set_languages(&harness), vec!["Spanish".to_owned().into_value()]);
+        assert_eq!(
+            set_languages(&harness),
+            vec!["Spanish".to_owned().into_value()]
+        );
     }
 
     #[tokio::test]
@@ -241,7 +258,10 @@ mod tests {
             .expect("configure");
 
         assert_eq!(
-            harness.fakes.service("ALTextToSpeech").calls_to("setParameter"),
+            harness
+                .fakes
+                .service("ALTextToSpeech")
+                .calls_to("setParameter"),
             vec![
                 ("pitchShift".to_owned(), 1.5f32).into_value(),
                 ("doubleVoice".to_owned(), 0.0f32).into_value(),
@@ -296,7 +316,10 @@ mod tests {
 
         let params = SpeechParams::defaults(Language::Spanish);
         assert_eq!(
-            harness.fakes.service("ALTextToSpeech").calls_to("setParameter"),
+            harness
+                .fakes
+                .service("ALTextToSpeech")
+                .calls_to("setParameter"),
             vec![
                 ("pitchShift".to_owned(), params.pitch_shift).into_value(),
                 ("doubleVoice".to_owned(), params.double_voice).into_value(),

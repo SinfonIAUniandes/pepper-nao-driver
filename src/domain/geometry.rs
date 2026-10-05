@@ -271,7 +271,8 @@ mod tests {
 
     #[test]
     fn pose2_compose_translates_in_parent_frame() {
-        let result = Pose2::new(1.0, 0.0, std::f32::consts::FRAC_PI_2).compose(Pose2::new(1.0, 0.0, 0.0));
+        let result =
+            Pose2::new(1.0, 0.0, std::f32::consts::FRAC_PI_2).compose(Pose2::new(1.0, 0.0, 0.0));
         assert_close(result.position.x, 1.0);
         assert_close(result.position.y, 1.0);
     }

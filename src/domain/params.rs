@@ -103,7 +103,10 @@ impl CameraConfig {
                 | Resolution::QQQQVGA
         );
         if !res_ok {
-            return Err(invalid(&format!("unknown resolution {}", self.resolution.0)));
+            return Err(invalid(&format!(
+                "unknown resolution {}",
+                self.resolution.0
+            )));
         }
         if camera.is_depth() {
             let res_ok = matches!(
@@ -223,7 +226,10 @@ impl CameraParams {
             (CameraParam::Hue, self.hue),
             (CameraParam::Gain, self.gain),
             (CameraParam::Exposure, self.exposure),
-            (CameraParam::HorizontalFlip, self.horizontal_flip.map(i32::from)),
+            (
+                CameraParam::HorizontalFlip,
+                self.horizontal_flip.map(i32::from),
+            ),
             (CameraParam::VerticalFlip, self.vertical_flip.map(i32::from)),
             (CameraParam::AutoExposure, self.auto_exposure.map(i32::from)),
             (
@@ -384,7 +390,11 @@ mod tests {
 
     #[test]
     fn depth_camera_accepts_raw_depth_only() {
-        assert!(CameraConfig::depth_default().validate(CameraId::Depth).is_ok());
+        assert!(
+            CameraConfig::depth_default()
+                .validate(CameraId::Depth)
+                .is_ok()
+        );
         let config = CameraConfig {
             color_space: ColorSpace::RGB,
             ..CameraConfig::depth_default()
@@ -418,9 +428,11 @@ mod tests {
 
     #[test]
     fn speech_params_bounds() {
-        assert!(SpeechParams::defaults(super::super::Language::English)
-            .validate()
-            .is_ok());
+        assert!(
+            SpeechParams::defaults(super::super::Language::English)
+                .validate()
+                .is_ok()
+        );
         let bad = SpeechParams {
             pitch_shift: 0.5,
             ..SpeechParams::defaults(super::super::Language::Spanish)
@@ -436,17 +448,21 @@ mod tests {
     #[test]
     fn mic_config_bounds() {
         assert!(MicConfig::DEFAULT.validate().is_ok());
-        assert!(MicConfig {
-            frequency: 22_050,
-            ..MicConfig::DEFAULT
-        }
-        .validate()
-        .is_err());
-        assert!(MicConfig {
-            channels: 5,
-            ..MicConfig::DEFAULT
-        }
-        .validate()
-        .is_err());
+        assert!(
+            MicConfig {
+                frequency: 22_050,
+                ..MicConfig::DEFAULT
+            }
+            .validate()
+            .is_err()
+        );
+        assert!(
+            MicConfig {
+                channels: 5,
+                ..MicConfig::DEFAULT
+            }
+            .validate()
+            .is_err()
+        );
     }
 }

@@ -1,11 +1,11 @@
 //! Free-zone walk: find reachable free space and walk to it.
 
-use super::{message_handler, Capability, CapabilityId, Context};
-use crate::domain::{FreeZoneRequest, Message, Pose2};
-use crate::qi::value::{as_f32s, plain};
-use crate::qi::Robot;
-use crate::transport::{Subscription, Transport};
+use super::{Capability, CapabilityId, Context, message_handler};
 use crate::Result;
+use crate::domain::{FreeZoneRequest, Message, Pose2};
+use crate::qi::Robot;
+use crate::qi::value::{as_f32s, plain};
+use crate::transport::{Subscription, Transport};
 use async_trait::async_trait;
 use qi::value::Value;
 use std::sync::Mutex;
@@ -127,8 +127,8 @@ fn robot_pose(values: &[f32]) -> Result<Pose2> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use crate::qi::value::as_f32;
     use qi::value::IntoValue;
     use std::time::Duration;
@@ -199,7 +199,10 @@ mod tests {
         );
         settle().await;
 
-        assert_eq!(move_calls(&harness), vec![(2.0f32, 1.0f32, 0.0f32).into_value()]);
+        assert_eq!(
+            move_calls(&harness),
+            vec![(2.0f32, 1.0f32, 0.0f32).into_value()]
+        );
         let waits = harness
             .fakes
             .service("ALMotion")
@@ -218,7 +221,11 @@ mod tests {
         let harness = Harness::default();
         // Robot at (1, 0) turned 90°: the centre (2, 0) lies one metre to its
         // left.
-        script_walk(&harness, (2.0, 0.0), (1.0, 0.0, std::f32::consts::FRAC_PI_2));
+        script_walk(
+            &harness,
+            (2.0, 0.0),
+            (1.0, 0.0, std::f32::consts::FRAC_PI_2),
+        );
         let capability = FreeZone::new();
         capability.enable(&harness.ctx).await.expect("enable");
 
@@ -263,6 +270,11 @@ mod tests {
         );
         settle().await;
 
-        assert!(harness.transport.published_on("free_zone_result").is_empty());
+        assert!(
+            harness
+                .transport
+                .published_on("free_zone_result")
+                .is_empty()
+        );
     }
 }

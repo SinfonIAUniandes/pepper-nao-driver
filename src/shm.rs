@@ -46,7 +46,8 @@ impl SharedMemory {
             .map_err(|err| Self::error(segment, err))?;
         // SAFETY: `name` is a valid NUL-terminated string; the returned
         // descriptor is checked before any further use.
-        let descriptor = unsafe { libc::shm_open(name.as_ptr(), libc::O_CREAT | libc::O_RDWR, 0o666) };
+        let descriptor =
+            unsafe { libc::shm_open(name.as_ptr(), libc::O_CREAT | libc::O_RDWR, 0o666) };
         if descriptor < 0 {
             return Err(Self::error(segment, std::io::Error::last_os_error()));
         }
@@ -62,7 +63,16 @@ impl SharedMemory {
             return Err(Self::error(segment, detail));
         }
         // SAFETY: the descriptor refers to a file of one byte, mapped read-write.
-        let raw = unsafe { libc::mmap(std::ptr::null_mut(), 1, libc::PROT_READ | libc::PROT_WRITE, libc::MAP_SHARED, descriptor, 0) };
+        let raw = unsafe {
+            libc::mmap(
+                std::ptr::null_mut(),
+                1,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED,
+                descriptor,
+                0,
+            )
+        };
         if raw == libc::MAP_FAILED {
             let detail = std::io::Error::last_os_error();
             unsafe {
@@ -149,7 +159,12 @@ impl SharedMemories {
 
     /// Clears every flag, e.g. on shutdown.
     pub fn reset(&self) -> Result<()> {
-        for segment in [Segment::PepperHead, Segment::Depth2Laser, Segment::Localizer, Segment::Planner] {
+        for segment in [
+            Segment::PepperHead,
+            Segment::Depth2Laser,
+            Segment::Localizer,
+            Segment::Planner,
+        ] {
             self.set_enabled(segment, false)?;
         }
         Ok(())
@@ -170,7 +185,9 @@ mod tests {
     #[test]
     fn shared_memories_reset_clears_every_flag() {
         let memories = SharedMemories::open().expect("open");
-        memories.set_enabled(Segment::PepperHead, true).expect("write");
+        memories
+            .set_enabled(Segment::PepperHead, true)
+            .expect("write");
         assert!(memories.enabled(Segment::PepperHead));
         memories.reset().expect("reset");
         assert!(!memories.enabled(Segment::PepperHead));

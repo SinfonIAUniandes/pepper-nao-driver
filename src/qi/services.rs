@@ -38,7 +38,10 @@ impl AlMemory {
     }
 
     pub async fn get_data(&self, key: &str) -> Result<Value<'static>> {
-        let value = self.service.call("getData", key.to_owned().into_value()).await?;
+        let value = self
+            .service
+            .call("getData", key.to_owned().into_value())
+            .await?;
         Ok(plain(value))
     }
 
@@ -64,12 +67,7 @@ impl AlMemory {
     }
 
     /// Routes the event `key` to `callback` of the registered object `object`.
-    pub async fn subscribe_to_event(
-        &self,
-        key: &str,
-        object: &str,
-        callback: &str,
-    ) -> Result<()> {
+    pub async fn subscribe_to_event(&self, key: &str, object: &str, callback: &str) -> Result<()> {
         self.service
             .call(
                 "subscribeToEvent",
@@ -125,8 +123,7 @@ impl AlMotion {
             .service
             .call("getAngles", (name.to_owned(), use_sensors).into_value())
             .await?;
-        as_f32s(&value)
-            .ok_or_else(|| crate::Error::qi_value("ALMotion.getAngles", value))
+        as_f32s(&value).ok_or_else(|| crate::Error::qi_value("ALMotion.getAngles", value))
     }
 
     pub async fn get_body_names(&self, name: &str) -> Result<Vec<String>> {
@@ -134,8 +131,7 @@ impl AlMotion {
             .service
             .call("getBodyNames", name.to_owned().into_value())
             .await?;
-        as_texts(&value)
-            .ok_or_else(|| crate::Error::qi_value("ALMotion.getBodyNames", value))
+        as_texts(&value).ok_or_else(|| crate::Error::qi_value("ALMotion.getBodyNames", value))
     }
 
     /// Pose of `frame` in the given reference frame: `[x, y, z, roll, pitch, yaw]`.
@@ -152,15 +148,13 @@ impl AlMotion {
                 (frame.to_owned(), reference.id(), use_sensors).into_value(),
             )
             .await?;
-        as_f32s(&value)
-            .ok_or_else(|| crate::Error::qi_value("ALMotion.getPosition", value))
+        as_f32s(&value).ok_or_else(|| crate::Error::qi_value("ALMotion.getPosition", value))
     }
 
     /// Base velocity `[vx, vy, vz, wx, wy, wz]`.
     pub async fn get_robot_velocity(&self) -> Result<Vec<f32>> {
         let value = self.service.call("getRobotVelocity", Value::Unit).await?;
-        as_f32s(&value)
-            .ok_or_else(|| crate::Error::qi_value("ALMotion.getRobotVelocity", value))
+        as_f32s(&value).ok_or_else(|| crate::Error::qi_value("ALMotion.getRobotVelocity", value))
     }
 
     /// SE(2) robot pose `[x, y, theta]`.
@@ -169,17 +163,11 @@ impl AlMotion {
             .service
             .call("getRobotPosition", use_sensors.into_value())
             .await?;
-        as_f32s(&value)
-            .ok_or_else(|| crate::Error::qi_value("ALMotion.getRobotPosition", value))
+        as_f32s(&value).ok_or_else(|| crate::Error::qi_value("ALMotion.getRobotPosition", value))
     }
 
     /// Moves one joint asynchronously.
-    pub async fn set_angle(
-        &self,
-        name: &str,
-        angle: f32,
-        fraction_max_speed: f32,
-    ) -> Result<()> {
+    pub async fn set_angle(&self, name: &str, angle: f32, fraction_max_speed: f32) -> Result<()> {
         self.service
             .post(
                 "setAngles",
@@ -201,7 +189,10 @@ impl AlMotion {
     /// Enables or disables external collision protection for walking ("Move").
     pub async fn set_external_collision_protection_enabled(&self, enabled: bool) -> Result<()> {
         self.service
-            .call("setExternalCollisionProtectionEnabled", ("Move".to_owned(), enabled).into_value())
+            .call(
+                "setExternalCollisionProtectionEnabled",
+                ("Move".to_owned(), enabled).into_value(),
+            )
             .await?;
         Ok(())
     }
@@ -259,7 +250,12 @@ impl AlVideoDevice {
         Ok(())
     }
 
-    pub async fn set_camera_parameter(&self, source: i32, parameter: i32, value: i32) -> Result<()> {
+    pub async fn set_camera_parameter(
+        &self,
+        source: i32,
+        parameter: i32,
+        value: i32,
+    ) -> Result<()> {
         self.service
             .call(
                 "setCameraParameter",
@@ -384,9 +380,7 @@ impl AlSpeechRecognition {
     }
 
     pub async fn pause(&self, paused: bool) -> Result<()> {
-        self.service
-            .call("pause", paused.into_value())
-            .await?;
+        self.service.call("pause", paused.into_value()).await?;
         Ok(())
     }
 
@@ -509,7 +503,11 @@ impl AlNavigation {
     }
 
     /// Raw `getFreeZone` result; the world centre is element `[2]`.
-    pub async fn get_free_zone(&self, desired_radius: f32, displacement: f32) -> Result<Value<'static>> {
+    pub async fn get_free_zone(
+        &self,
+        desired_radius: f32,
+        displacement: f32,
+    ) -> Result<Value<'static>> {
         let value = self
             .service
             .call("getFreeZone", (desired_radius, displacement).into_value())
@@ -529,7 +527,14 @@ impl AlLeds {
     }
 
     /// Fades `name` to the given color (0.0–1.0 per channel) over `duration`.
-    pub async fn fade_rgb(&self, name: &str, red: f32, green: f32, blue: f32, duration: f32) -> Result<()> {
+    pub async fn fade_rgb(
+        &self,
+        name: &str,
+        red: f32,
+        green: f32,
+        blue: f32,
+        duration: f32,
+    ) -> Result<()> {
         self.service
             .call(
                 "fadeRGB",
@@ -653,7 +658,12 @@ mod tests {
         }
 
         fn last_call(&self) -> (String, Value<'static>) {
-            self.calls.lock().expect("lock").last().expect("call").clone()
+            self.calls
+                .lock()
+                .expect("lock")
+                .last()
+                .expect("call")
+                .clone()
         }
     }
 
@@ -691,7 +701,11 @@ mod tests {
         let fake = fake();
         let memory = AlMemory::new(fake.clone());
         memory
-            .subscribe_to_event("FrontTactilTouched", "ROS-DriverFrontTactilTouched", "touchCallback")
+            .subscribe_to_event(
+                "FrontTactilTouched",
+                "ROS-DriverFrontTactilTouched",
+                "touchCallback",
+            )
             .await
             .expect("subscribe");
         let (method, args) = fake.last_call();
@@ -712,7 +726,10 @@ mod tests {
         let fake = fake();
         fake.replies(&[
             ("getAngles", vec![0.1f32, -0.2].into_value()),
-            ("getPosition", vec![1.0f32, 2.0, 3.0, 0.0, 0.0, 0.5].into_value()),
+            (
+                "getPosition",
+                vec![1.0f32, 2.0, 3.0, 0.0, 0.0, 0.5].into_value(),
+            ),
         ]);
         let motion = AlMotion::new(fake.clone());
 
@@ -761,7 +778,10 @@ mod tests {
             ("front_camera".to_owned(), 0i32, 1i32, 11i32, 10i32).into_value()
         );
 
-        video.get_image_remote(&handle).await.expect("getImageRemote");
+        video
+            .get_image_remote(&handle)
+            .await
+            .expect("getImageRemote");
         video.unsubscribe(&handle).await.expect("unsubscribe");
         assert_eq!(fake.last_call().0, "unsubscribe");
     }
@@ -772,7 +792,9 @@ mod tests {
         fake.replies(&[("getParameter", 1.17f32.into_value())]);
         let tts = AlTextToSpeech::new(fake.clone());
 
-        tts.set_parameter("pitchShift", 1.17).await.expect("setParameter");
+        tts.set_parameter("pitchShift", 1.17)
+            .await
+            .expect("setParameter");
         let (method, args) = fake.last_call();
         assert_eq!(method, "setParameter");
         assert_eq!(args, ("pitchShift".to_owned(), 1.17f32).into_value());
@@ -787,7 +809,11 @@ mod tests {
             let fake = Arc::clone(&fake);
             move |_name| fake.clone() as Arc<dyn Service>
         });
-        robot.basic_awareness.set_enabled(true).await.expect("setEnabled");
+        robot
+            .basic_awareness
+            .set_enabled(true)
+            .await
+            .expect("setEnabled");
         assert_eq!(fake.last_call().0, "setEnabled");
     }
 }

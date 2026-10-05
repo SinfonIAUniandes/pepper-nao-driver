@@ -55,12 +55,24 @@ pub const TOUCH_EVENTS: [(&str, crate::domain::TouchId); 12] = [
     ("FrontTactilTouched", crate::domain::TouchId::HeadFront),
     ("MiddleTactilTouched", crate::domain::TouchId::HeadMiddle),
     ("RearTactilTouched", crate::domain::TouchId::HeadRear),
-    ("HandRightBackTouched", crate::domain::TouchId::HandRightBack),
-    ("HandRightLeftTouched", crate::domain::TouchId::HandRightLeft),
-    ("HandRightRightTouched", crate::domain::TouchId::HandRightRight),
+    (
+        "HandRightBackTouched",
+        crate::domain::TouchId::HandRightBack,
+    ),
+    (
+        "HandRightLeftTouched",
+        crate::domain::TouchId::HandRightLeft,
+    ),
+    (
+        "HandRightRightTouched",
+        crate::domain::TouchId::HandRightRight,
+    ),
     ("HandLeftBackTouched", crate::domain::TouchId::HandLeftBack),
     ("HandLeftLeftTouched", crate::domain::TouchId::HandLeftLeft),
-    ("HandLeftRightTouched", crate::domain::TouchId::HandLeftRight),
+    (
+        "HandLeftRightTouched",
+        crate::domain::TouchId::HandLeftRight,
+    ),
 ];
 
 /// Service name under which a callback object for `key` is registered.

@@ -1,11 +1,11 @@
 //! Merged laser scan: the physical beams plus the external depth-to-laser module.
 
 use super::{Capability, CapabilityId, Context};
+use crate::Result;
 use crate::domain::{LaserScan, Message, Timestamp};
 use crate::qi::keys;
 use crate::qi::services::AlMemory;
 use crate::qi::value::{as_f32, as_f32s, as_f32s_lossy};
-use crate::Result;
 use async_trait::async_trait;
 
 /// Default publishing rate in Hz.
@@ -102,7 +102,8 @@ pub fn merge(physical: &[f32], depth: &DepthSample, stamp: Timestamp) -> LaserSc
         }
     }
 
-    let depth_last = ((count.saturating_sub(1) as f32 * beta) / beta_p).round() as i32 + depth_first;
+    let depth_last =
+        ((count.saturating_sub(1) as f32 * beta) / beta_p).round() as i32 + depth_first;
     let mut halves = [Vec::new(), Vec::new()];
     for (index, &range) in physical.iter().take(BEAMS).enumerate() {
         let range = if range > PHYSICAL_FREE_LIMIT {
@@ -187,8 +188,8 @@ async fn read_depth_sample(memory: &AlMemory) -> Option<DepthSample> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use qi::value::IntoValue;
 
     /// Depth sample whose four readings land on scan slots 133, 195, 256, 318.
@@ -252,8 +253,16 @@ mod tests {
         let harness = Harness::default();
         let memory = harness.fakes.service("ALMemory");
         memory.script("getListData", vec![0.5f32; 90].into_value());
-        memory.script_for("getData", keys::DEPTH2LASER_RANGES, vec![1.0f32, 2.0].into_value());
-        memory.script_for("getData", keys::DEPTH2LASER_MIN_ANGLE, (-1.0f32).into_value());
+        memory.script_for(
+            "getData",
+            keys::DEPTH2LASER_RANGES,
+            vec![1.0f32, 2.0].into_value(),
+        );
+        memory.script_for(
+            "getData",
+            keys::DEPTH2LASER_MIN_ANGLE,
+            (-1.0f32).into_value(),
+        );
         memory.script_for("getData", keys::DEPTH2LASER_MAX_ANGLE, 1.0f32.into_value());
         memory.script_for("getData", keys::DEPTH2LASER_NUM_RANGES, 2.0f32.into_value());
         memory.script_for("getData", keys::DEPTH2LASER_MAX_RANGE, 5.0f32.into_value());

@@ -4,8 +4,8 @@
 //! control RPCs are named after their tool group (`navigation_tools`, ...).
 
 use crate::domain::{ControlRequest, ControlResponse, Message, Timestamp};
-use futures::future::BoxFuture;
 use futures::Stream;
+use futures::future::BoxFuture;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -13,7 +13,8 @@ use std::sync::Arc;
 pub type MessageHandler = Arc<dyn Fn(Message) + Send + Sync>;
 
 /// Handler serving one control RPC.
-pub type RpcHandler = Arc<dyn Fn(ControlRequest) -> BoxFuture<'static, ControlResponse> + Send + Sync>;
+pub type RpcHandler =
+    Arc<dyn Fn(ControlRequest) -> BoxFuture<'static, ControlResponse> + Send + Sync>;
 
 /// Stream of periodic ticks.
 pub type Timer = Pin<Box<dyn Stream<Item = ()> + Send>>;

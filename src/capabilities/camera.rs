@@ -1,9 +1,11 @@
 //! Camera streaming: one capability per camera source.
 
 use super::{Capability, CapabilityId, Configuration, ConfigurationResult, Context};
-use crate::domain::{CameraConfig, CameraId, CameraParam, CameraParams, ColorSpace, ImageFrame, Message, Timestamp};
-use crate::qi::value::{as_bytes, as_f32, as_i32, plain};
 use crate::Result;
+use crate::domain::{
+    CameraConfig, CameraId, CameraParam, CameraParams, ColorSpace, ImageFrame, Message, Timestamp,
+};
+use crate::qi::value::{as_bytes, as_f32, as_i32, plain};
 use async_trait::async_trait;
 use qi::value::Value;
 use std::sync::Mutex;
@@ -117,7 +119,12 @@ impl Capability for Camera {
     }
 
     async fn enable(&self, ctx: &Context) -> Result<()> {
-        if self.handle.lock().unwrap_or_else(|err| err.into_inner()).is_some() {
+        if self
+            .handle
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .is_some()
+        {
             return Ok(());
         }
         self.config().validate(self.camera)?;
@@ -137,13 +144,18 @@ impl Capability for Camera {
     }
 
     async fn tick(&self, ctx: &Context) -> Result<()> {
-        let Some(handle) = self.handle.lock().unwrap_or_else(|err| err.into_inner()).clone()
+        let Some(handle) = self
+            .handle
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .clone()
         else {
             return Ok(());
         };
         let raw = ctx.robot.video.get_image_remote(&handle).await?;
-        let image = decode_image(&raw)
-            .ok_or_else(|| crate::Error::qi_value("ALVideoDevice.getImageRemote", "malformed image"))?;
+        let image = decode_image(&raw).ok_or_else(|| {
+            crate::Error::qi_value("ALVideoDevice.getImageRemote", "malformed image")
+        })?;
         let config = self.config();
         let camera_info = ctx
             .assets
@@ -181,7 +193,12 @@ impl Capability for Camera {
                 *self.config.lock().unwrap_or_else(|err| err.into_inner()) = config;
                 self.apply_params(ctx, params).await?;
                 // The streaming setup changed: re-subscribe with the new config.
-                if self.handle.lock().unwrap_or_else(|err| err.into_inner()).is_some() {
+                if self
+                    .handle
+                    .lock()
+                    .unwrap_or_else(|err| err.into_inner())
+                    .is_some()
+                {
                     self.disable(ctx).await?;
                     self.subscribe(ctx).await?;
                 }
@@ -281,8 +298,8 @@ fn assign(params: &mut CameraParams, param: CameraParam, value: i32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use crate::domain::Resolution;
     use qi::value::IntoValue;
 
@@ -331,7 +348,10 @@ mod tests {
             .script("subscribeCamera", "handle-1".to_owned().into_value());
         Camera::front().enable(&harness.ctx).await.expect("enable");
 
-        let calls = harness.fakes.service("ALVideoDevice").calls_to("subscribeCamera");
+        let calls = harness
+            .fakes
+            .service("ALVideoDevice")
+            .calls_to("subscribeCamera");
         assert_eq!(
             calls[0],
             ("front_camera".to_owned(), 0i32, 1i32, 11i32, 10i32).into_value()
@@ -454,20 +474,27 @@ mod tests {
     async fn depth_camera_rejects_parameter_requests() {
         let harness = Harness::default();
         let camera = Camera::depth();
-        assert!(camera
-            .configure(&harness.ctx, Configuration::CameraParams(CameraParams::default()))
-            .await
-            .is_err());
-        assert!(camera
-            .configure(
-                &harness.ctx,
-                Configuration::ReadCameraParams(CameraParams {
-                    brightness: Some(0),
-                    ..Default::default()
-                })
-            )
-            .await
-            .is_err());
+        assert!(
+            camera
+                .configure(
+                    &harness.ctx,
+                    Configuration::CameraParams(CameraParams::default())
+                )
+                .await
+                .is_err()
+        );
+        assert!(
+            camera
+                .configure(
+                    &harness.ctx,
+                    Configuration::ReadCameraParams(CameraParams {
+                        brightness: Some(0),
+                        ..Default::default()
+                    })
+                )
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
@@ -512,6 +539,9 @@ mod tests {
 
         let subscriptions = video.calls_to("subscribeCamera");
         assert_eq!(subscriptions.len(), 2);
-        assert_eq!(subscriptions[1], ("front_camera".to_owned(), 0i32, 0i32, 11i32, 5i32).into_value());
+        assert_eq!(
+            subscriptions[1],
+            ("front_camera".to_owned(), 0i32, 0i32, 11i32, 5i32).into_value()
+        );
     }
 }

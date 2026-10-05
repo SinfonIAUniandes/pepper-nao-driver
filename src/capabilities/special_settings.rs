@@ -1,9 +1,9 @@
 //! Robot-wide special settings; the only capability enabled at boot.
 
-use super::{message_handler, Capability, CapabilityId, Context};
+use super::{Capability, CapabilityId, Context, message_handler};
+use crate::Result;
 use crate::domain::{Message, SpecialSetting};
 use crate::transport::Subscription;
-use crate::Result;
 use async_trait::async_trait;
 use std::sync::Mutex;
 
@@ -67,24 +67,27 @@ async fn apply(robot: &crate::qi::Robot, setting: SpecialSetting) -> Result<()> 
     match setting {
         SpecialSetting::Rest(true) => robot.motion.rest().await,
         SpecialSetting::Rest(false) => robot.motion.wake_up().await,
-        SpecialSetting::ExternalCollisionProtection(enabled) => robot
-            .motion
-            .set_external_collision_protection_enabled(enabled)
-            .await,
+        SpecialSetting::ExternalCollisionProtection(enabled) => {
+            robot
+                .motion
+                .set_external_collision_protection_enabled(enabled)
+                .await
+        }
         SpecialSetting::SecurityDistance(distance) => {
-            robot.motion.set_orthogonal_security_distance(distance).await
+            robot
+                .motion
+                .set_orthogonal_security_distance(distance)
+                .await
         }
-        SpecialSetting::Awareness(enabled) => {
-            robot.basic_awareness.set_enabled(enabled).await
-        }
+        SpecialSetting::Awareness(enabled) => robot.basic_awareness.set_enabled(enabled).await,
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::capabilities::support::Harness;
     use crate::capabilities::Capability;
+    use crate::capabilities::support::Harness;
     use std::time::Duration;
 
     async fn settle() {
@@ -136,11 +139,18 @@ mod tests {
         let capability = SpecialSettings::new();
         capability.enable(&harness.ctx).await.expect("enable");
         capability.disable(&harness.ctx).await.expect("disable");
-        harness
-            .transport
-            .inject("special_settings", Message::SpecialSetting(SpecialSetting::Rest(true)));
+        harness.transport.inject(
+            "special_settings",
+            Message::SpecialSetting(SpecialSetting::Rest(true)),
+        );
         settle().await;
-        assert!(harness.fakes.service("ALMotion").calls_to("rest").is_empty());
+        assert!(
+            harness
+                .fakes
+                .service("ALMotion")
+                .calls_to("rest")
+                .is_empty()
+        );
     }
 
     use qi::value::IntoValue;

@@ -2,7 +2,7 @@
 
 use al_robot_driver_rs::capabilities;
 use al_robot_driver_rs::driver::{self, Driver, Options};
-use al_robot_driver_rs::transport::{memory::MemoryTransport, Transport};
+use al_robot_driver_rs::transport::{Transport, memory::MemoryTransport};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 use clap::Parser;
 use std::path::PathBuf;
@@ -37,8 +37,7 @@ fn transport() -> Arc<dyn Transport> {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
