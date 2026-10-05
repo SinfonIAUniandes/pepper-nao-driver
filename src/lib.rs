@@ -9,8 +9,10 @@
 // missing libqi-rs support are the documented exception.
 #![cfg_attr(not(test), warn(clippy::unwrap_used, clippy::panic))]
 
+pub mod assets;
 pub mod domain;
 pub mod error;
+pub mod kinematics;
 pub mod qi;
 pub mod shm;
 pub mod transport;
