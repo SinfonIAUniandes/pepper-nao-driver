@@ -7,9 +7,13 @@
 pub mod animation;
 pub mod cmd_vel;
 pub mod depth_to_laser;
+pub mod free_zone;
 pub mod joints;
 pub mod laser;
 pub mod leds;
+pub mod merged_laser;
+pub mod moveto;
+pub mod navigation;
 pub mod odom;
 pub mod sonar;
 pub mod special_settings;
