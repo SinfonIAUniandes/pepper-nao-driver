@@ -3,7 +3,11 @@ name = "pepper-nao-driver"
 version = "0.1.0"
 edition = "2024"
 description = "Pepper robot driver binding the NAOqi QI surface to domain capabilities over a pluggable transport"
-license = "GPL-3.0-only"
+authors = [
+    "SinfonIA Uniandes <sinfonia@uniandes.edu.co>",
+    "Juan David Guevara <soyjuandavidguevara@gmail.com>",
+]
+license = "Apache-2.0"
 
 [dependencies]
 # QI stack: the only source of QI functionality. Nothing QI-related is reimplemented here.

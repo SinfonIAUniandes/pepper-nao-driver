@@ -110,3 +110,8 @@ objects cannot be unregistered and re-registered at runtime. `disable` paths
 unsubscribe the ALMemory events (which stops all traffic), and
 `Connected::unregister_callback_objects` is marked `unimplemented!` to keep the
 gap explicit.
+
+## License
+
+Apache License 2.0 — Copyright 2026 SinfonIA Uniandes <sinfonia@uniandes.edu.co>.
+Maintainer: Juan David Guevara <soyjuandavidguevara@gmail.com>.
