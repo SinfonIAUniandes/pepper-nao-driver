@@ -594,6 +594,23 @@ pub struct Robot {
 }
 
 impl Robot {
+    /// The NAOqi services the driver talks to.
+    pub const SERVICE_NAMES: [&'static str; 13] = [
+        "ALMemory",
+        "ALMotion",
+        "ALVideoDevice",
+        "ALAudioDevice",
+        "ALRobotModel",
+        "ALSpeechRecognition",
+        "ALTextToSpeech",
+        "ALAnimatedSpeech",
+        "ALSonar",
+        "ALNavigation",
+        "ALLeds",
+        "ALBehaviorManager",
+        "ALBasicAwareness",
+    ];
+
     /// Builds the proxies over a service lookup (`ALMemory`, `ALMotion`, ...).
     pub fn new(lookup: impl Fn(&str) -> Arc<dyn Service>) -> Self {
         Self {

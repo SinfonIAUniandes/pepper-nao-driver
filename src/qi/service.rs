@@ -19,13 +19,16 @@ pub trait Service: Send + Sync {
     async fn post(&self, method: &str, args: Value<'static>) -> Result<()>;
 }
 
-/// Adapter exposing a service resolved through a [`qi::Node`].
-pub struct ObjectService {
-    client: qi::ObjectClient,
+/// Adapter exposing a service handle resolved through a [`qi::Node`].
+pub struct ObjectService<O> {
+    client: O,
 }
 
-impl ObjectService {
-    pub fn new(client: qi::ObjectClient) -> Self {
+impl<O> ObjectService<O>
+where
+    O: Object + Sync,
+{
+    pub fn new(client: O) -> Self {
         Self { client }
     }
 
@@ -46,7 +49,10 @@ impl ObjectService {
 }
 
 #[async_trait]
-impl Service for ObjectService {
+impl<O> Service for ObjectService<O>
+where
+    O: Object + Clone + Send + Sync,
+{
     async fn call(&self, method: &str, args: Value<'static>) -> Result<Value<'static>> {
         let args = self.encode(method, args);
         Ok(ObjectExt::call::<Value<'static>, _, _>(&self.client, method, args).await?)

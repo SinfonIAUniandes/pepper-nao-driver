@@ -41,36 +41,42 @@ impl<T> Slot<T> {
     }
 }
 
-/// State, sinks and handshake methods of the served `robot_toolkit` object.
 #[derive(Default)]
-pub struct Toolkit {
+struct ToolkitInner {
     instance_prefix: String,
     publish_enabled: AtomicBool,
     attached_transport: Mutex<Option<String>>,
-    pub touch: Slot<Touch>,
-    pub word_recognized: Slot<WordRecognized>,
-    pub sound_located: Slot<SoundBearing>,
-    pub face_detected: Slot<FaceEvent>,
-    pub result: Slot<String>,
-    pub audio: Slot<RemoteAudio>,
+    touch: Slot<Touch>,
+    word_recognized: Slot<WordRecognized>,
+    sound_located: Slot<SoundBearing>,
+    face_detected: Slot<FaceEvent>,
+    result: Slot<String>,
+    audio: Slot<RemoteAudio>,
 }
+
+/// State, sinks and handshake methods of the served `robot_toolkit` object.
+///
+/// Cheaply cloneable: all clones share the same state, so one instance can be
+/// registered under every callback service name.
+#[derive(Clone, Default)]
+pub struct Toolkit(Arc<ToolkitInner>);
 
 impl Toolkit {
     pub fn new(instance_prefix: impl Into<String>) -> Self {
-        Self {
+        Self(Arc::new(ToolkitInner {
             instance_prefix: instance_prefix.into(),
             ..Default::default()
-        }
+        }))
     }
 
     pub fn instance_prefix(&self) -> &str {
-        &self.instance_prefix
+        &self.0.instance_prefix
     }
 
     /// Whether `startPublishing` was called: periodic publishing stays off
     /// until the transport stack is up.
     pub fn publish_enabled(&self) -> bool {
-        self.publish_enabled.load(Ordering::Relaxed)
+        self.0.publish_enabled.load(Ordering::Relaxed)
     }
 
     /// Records the attached transport; returns an error string on bad input.
@@ -78,18 +84,47 @@ impl Toolkit {
         if name.is_empty() {
             return "error: transport name must not be empty".to_owned();
         }
-        *self
-            .attached_transport
-            .lock()
-            .unwrap_or_else(|err| err.into_inner()) = Some(name.to_owned());
+        *self.0.attached_transport.lock().unwrap_or_else(|err| err.into_inner()) =
+            Some(name.to_owned());
         "ok".to_owned()
     }
 
     pub fn attached_transport(&self) -> Option<String> {
-        self.attached_transport
+        self.0
+            .attached_transport
             .lock()
             .unwrap_or_else(|err| err.into_inner())
             .clone()
+    }
+
+    /// Sink of `touchCallback`.
+    pub fn touch(&self) -> &Slot<Touch> {
+        &self.0.touch
+    }
+
+    /// Sink of `wordRecognizedCallback`.
+    pub fn word_recognized(&self) -> &Slot<WordRecognized> {
+        &self.0.word_recognized
+    }
+
+    /// Sink of `soundLocatedCallback`.
+    pub fn sound_located(&self) -> &Slot<SoundBearing> {
+        &self.0.sound_located
+    }
+
+    /// Sink of `faceDetectedCallback`.
+    pub fn face_detected(&self) -> &Slot<FaceEvent> {
+        &self.0.face_detected
+    }
+
+    /// Sink of `onResultCallback`.
+    pub fn result(&self) -> &Slot<String> {
+        &self.0.result
+    }
+
+    /// Sink of `processRemote`.
+    pub fn audio(&self) -> &Slot<RemoteAudio> {
+        &self.0.audio
     }
 }
 
@@ -145,48 +180,48 @@ impl Object for Toolkit {
                 .ok_or(qi::Error::MethodNotFound(ident.clone()))?,
         };
         match name.as_str() {
-            "_whoWillWin" => Ok(self.instance_prefix.clone().into_value().into_owned()),
+            "_whoWillWin" => Ok(self.instance_prefix().to_owned().into_value().into_owned()),
             "attach-transport" => {
                 let transport: String = decode_arg(args, "attach-transport")?;
                 Ok(self.attach_transport(&transport).into_value().into_owned())
             }
             "startPublishing" => {
-                self.publish_enabled.store(true, Ordering::Relaxed);
+                self.0.publish_enabled.store(true, Ordering::Relaxed);
                 Ok(Value::Unit)
             }
             "touchCallback" => self.dispatch_event(args, |key, value| {
                 if let Some(touch) = events::decode_touch(&key, &value) {
-                    self.touch.dispatch(touch);
+                    self.0.touch.dispatch(touch);
                 }
             }),
             "wordRecognizedCallback" => self.dispatch_event(args, |key, value| {
                 let _ = key;
                 if let Some(words) = events::decode_word_recognized(&value) {
-                    self.word_recognized.dispatch(words);
+                    self.0.word_recognized.dispatch(words);
                 }
             }),
             "soundLocatedCallback" => self.dispatch_event(args, |key, value| {
                 let _ = key;
                 if let Some(bearing) = events::decode_sound_located(&value) {
-                    self.sound_located.dispatch(bearing);
+                    self.0.sound_located.dispatch(bearing);
                 }
             }),
             "faceDetectedCallback" => self.dispatch_event(args, |key, value| {
                 let _ = key;
                 if let Some(faces) = events::decode_face_event(&value) {
-                    self.face_detected.dispatch(faces);
+                    self.0.face_detected.dispatch(faces);
                 }
             }),
             "onResultCallback" => self.dispatch_event(args, |key, value| {
                 let _ = key;
                 if let Some(result) = events::decode_result(&value) {
-                    self.result.dispatch(result);
+                    self.0.result.dispatch(result);
                 }
             }),
             "processRemote" => {
                 let (channels, samples, _timestamp, buffer): (i32, i32, Raw, Raw) = decode_args(args)?;
                 if let Some(audio) = events::decode_audio(channels, samples, &buffer.into_inner()) {
-                    self.audio.dispatch(audio);
+                    self.0.audio.dispatch(audio);
                 }
                 Ok(Value::Unit)
             }
@@ -276,7 +311,7 @@ mod tests {
         let received = Arc::new(Mutex::new(Vec::new()));
         let slot = Arc::clone(&received);
         toolkit
-            .touch
+            .touch()
             .set(move |touch| slot.lock().unwrap().push(touch));
 
         toolkit
@@ -297,7 +332,7 @@ mod tests {
         let fired = Arc::new(AtomicBool::new(false));
         let slot = Arc::clone(&fired);
         toolkit
-            .word_recognized
+            .word_recognized()
             .set(move |_| slot.store(true, Ordering::Relaxed));
         toolkit
             .meta_call(
