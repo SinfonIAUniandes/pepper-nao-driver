@@ -1,5 +1,5 @@
 [package]
-name = "al-robot-driver-rs"
+name = "pepper-nao-driver"
 version = "0.1.0"
 edition = "2024"
 description = "Pepper robot driver binding the NAOqi QI surface to domain capabilities over a pluggable transport"

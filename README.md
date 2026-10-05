@@ -1,4 +1,4 @@
-# al-robot-driver-rs
+# pepper-nao-driver
 
 Pepper robot driver: binds the NAOqi QI surface (AL* services, ALMemory keys and
 events) to domain capabilities that flow over a pluggable transport. The driver

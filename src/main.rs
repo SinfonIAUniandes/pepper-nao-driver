@@ -1,8 +1,8 @@
 //! Driver binary: connects to Pepper and runs the capability set.
 
-use al_robot_driver_rs::capabilities;
-use al_robot_driver_rs::driver::{self, Driver, Options};
-use al_robot_driver_rs::transport::{Transport, memory::MemoryTransport};
+use pepper_nao_driver::capabilities;
+use pepper_nao_driver::driver::{self, Driver, Options};
+use pepper_nao_driver::transport::{Transport, memory::MemoryTransport};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 use clap::Parser;
 use std::path::PathBuf;
