@@ -7,6 +7,7 @@
 pub mod camera;
 pub mod cmd_vel;
 pub mod depth_to_laser;
+pub mod faces;
 pub mod laser;
 pub mod odom;
 pub mod special_settings;
