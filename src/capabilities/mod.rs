@@ -7,6 +7,7 @@
 pub mod cmd_vel;
 pub mod depth_to_laser;
 pub mod laser;
+pub mod merged_laser;
 pub mod odom;
 pub mod special_settings;
 pub mod tf;
