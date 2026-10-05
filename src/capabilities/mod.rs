@@ -4,12 +4,17 @@
 //! bridge) to one or more transport topics. Capabilities are disabled at boot
 //! except `special_settings`; control commands turn them on and off.
 
+pub mod animation;
 pub mod cmd_vel;
 pub mod depth_to_laser;
+pub mod joints;
 pub mod laser;
+pub mod leds;
 pub mod odom;
+pub mod sonar;
 pub mod special_settings;
 pub mod tf;
+pub mod touch;
 
 use crate::assets::Assets;
 use crate::domain::{CameraConfig, CameraParams, DepthToLaserParams, Message, MicConfig, SpeechParams};
