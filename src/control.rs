@@ -484,6 +484,7 @@ mod tests {
         let _guard = shm_lock().await;
         let harness = Harness::default();
         let (driver, _) = driver(&harness);
+        let head_before = harness.ctx.shm.enabled(Segment::PepperHead);
         dispatch(
             &driver,
             ControlRequest::Navigation(NavigationCommand::EnableAll),
@@ -494,7 +495,7 @@ mod tests {
         assert!(driver.is_enabled(CapabilityId::FreeZone));
         assert!(!driver.is_enabled(CapabilityId::MergedLaser));
         assert!(harness.ctx.shm.enabled(Segment::Depth2Laser));
-        assert!(!harness.ctx.shm.enabled(Segment::PepperHead));
+        assert_eq!(harness.ctx.shm.enabled(Segment::PepperHead), head_before);
     }
 
     #[tokio::test]
