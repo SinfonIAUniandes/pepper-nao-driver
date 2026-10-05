@@ -5,8 +5,10 @@
 //! except `special_settings`; control commands turn them on and off.
 
 pub mod animation;
+pub mod camera;
 pub mod cmd_vel;
 pub mod depth_to_laser;
+pub mod faces;
 pub mod free_zone;
 pub mod joints;
 pub mod laser;
