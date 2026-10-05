@@ -10,10 +10,13 @@
 #![cfg_attr(not(test), warn(clippy::unwrap_used, clippy::panic))]
 
 pub mod assets;
+pub mod assets;
+pub mod capabilities;
 pub mod domain;
 pub mod error;
 pub mod kinematics;
 pub mod qi;
+pub mod scheduler;
 pub mod shm;
 pub mod transport;
 
