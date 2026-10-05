@@ -4,6 +4,7 @@
 //! bridge) to one or more transport topics. Capabilities are disabled at boot
 //! except `special_settings`; control commands turn them on and off.
 
+pub mod camera;
 pub mod cmd_vel;
 pub mod depth_to_laser;
 pub mod laser;
