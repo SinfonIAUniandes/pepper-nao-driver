@@ -78,6 +78,12 @@ impl SharedMemory {
         })
     }
 
+    /// Reads the one-byte enable flag back.
+    pub fn enabled(&self) -> bool {
+        // SAFETY: `raw` points to the single mapped byte.
+        (unsafe { std::ptr::read_volatile(self.raw) }) != 0
+    }
+
     /// Writes the one-byte enable flag.
     pub fn set_enabled(&self, enabled: bool) -> Result<()> {
         // SAFETY: `raw` points to the single mapped byte.
@@ -125,11 +131,19 @@ impl SharedMemories {
     }
 
     pub fn set_enabled(&self, segment: Segment, enabled: bool) -> Result<()> {
+        self.segment(segment).set_enabled(enabled)
+    }
+
+    pub fn enabled(&self, segment: Segment) -> bool {
+        self.segment(segment).enabled()
+    }
+
+    fn segment(&self, segment: Segment) -> &SharedMemory {
         match segment {
-            Segment::PepperHead => self.head.set_enabled(enabled),
-            Segment::Depth2Laser => self.depth_to_laser.set_enabled(enabled),
-            Segment::Localizer => self.localizer.set_enabled(enabled),
-            Segment::Planner => self.planner.set_enabled(enabled),
+            Segment::PepperHead => &self.head,
+            Segment::Depth2Laser => &self.depth_to_laser,
+            Segment::Localizer => &self.localizer,
+            Segment::Planner => &self.planner,
         }
     }
 
@@ -157,6 +171,8 @@ mod tests {
     fn shared_memories_reset_clears_every_flag() {
         let memories = SharedMemories::open().expect("open");
         memories.set_enabled(Segment::PepperHead, true).expect("write");
+        assert!(memories.enabled(Segment::PepperHead));
         memories.reset().expect("reset");
+        assert!(!memories.enabled(Segment::PepperHead));
     }
 }

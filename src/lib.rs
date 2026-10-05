@@ -11,6 +11,7 @@
 //! - [`qi`]: thin typed proxies over the NAOqi services, plus the objects the
 //!   driver serves back to the robot.
 //! - [`capabilities`]: one module per capability (`tf`, `odom`, `laser`, ...).
+//! - [`control`]: the control RPCs (`navigation_tools`, `vision_tools`, ...).
 //! - [`driver`]: lifecycle, capability registry and scheduler.
 
 // Driver code must not panic outside of tests; `unimplemented!` markers for
@@ -19,7 +20,9 @@
 
 pub mod assets;
 pub mod capabilities;
+pub mod control;
 pub mod domain;
+pub mod driver;
 pub mod error;
 pub mod kinematics;
 pub mod qi;

@@ -73,6 +73,11 @@ impl Toolkit {
         &self.0.instance_prefix
     }
 
+    /// Enables periodic publishing once the transport stack is up.
+    pub fn start_publishing(&self) {
+        self.0.publish_enabled.store(true, Ordering::Relaxed);
+    }
+
     /// Whether `startPublishing` was called: periodic publishing stays off
     /// until the transport stack is up.
     pub fn publish_enabled(&self) -> bool {
@@ -186,7 +191,7 @@ impl Object for Toolkit {
                 Ok(self.attach_transport(&transport).into_value().into_owned())
             }
             "startPublishing" => {
-                self.0.publish_enabled.store(true, Ordering::Relaxed);
+                self.start_publishing();
                 Ok(Value::Unit)
             }
             "touchCallback" => self.dispatch_event(args, |key, value| {

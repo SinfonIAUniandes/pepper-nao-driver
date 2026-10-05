@@ -99,6 +99,7 @@ impl CapabilityId {
 }
 
 /// Shared services a capability runs against.
+#[derive(Clone)]
 pub struct Context {
     pub robot: Arc<Robot>,
     pub transport: Arc<dyn Transport>,
@@ -221,13 +222,14 @@ impl Registry {
 pub(crate) mod support {
     //! Shared harness for capability tests.
 
-    use super::Context;
+    use super::{CapabilityId, Context};
     use crate::qi::object::Toolkit;
     use crate::qi::value::plain;
     use crate::qi::{Robot, Service};
     use crate::transport::MemoryTransport;
     use crate::Result;
     use async_trait::async_trait;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use qi::value::Value;
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
@@ -340,6 +342,91 @@ pub(crate) mod support {
         pub fn lookup(&self, name: &str) -> Arc<dyn Service> {
             self.service(name)
         }
+    }
+
+    /// Capability double recording its lifecycle.
+    pub struct Recording {
+        id: CapabilityId,
+        period: Option<f32>,
+        configure_result: super::ConfigurationResult,
+        pub enables: AtomicUsize,
+        pub disables: AtomicUsize,
+        pub ticks: AtomicUsize,
+        pub configures: AtomicUsize,
+    }
+
+    impl Recording {
+        pub fn new(id: CapabilityId, period: Option<f32>) -> Arc<Self> {
+            Self::build(id, period, super::ConfigurationResult::None)
+        }
+
+        /// A double whose `configure` answers `result`.
+        pub fn with_configure_result(
+            id: CapabilityId,
+            result: super::ConfigurationResult,
+        ) -> Arc<Self> {
+            Self::build(id, None, result)
+        }
+
+        fn build(
+            id: CapabilityId,
+            period: Option<f32>,
+            configure_result: super::ConfigurationResult,
+        ) -> Arc<Self> {
+            Arc::new(Self {
+                id,
+                period,
+                configure_result,
+                enables: AtomicUsize::new(0),
+                disables: AtomicUsize::new(0),
+                ticks: AtomicUsize::new(0),
+                configures: AtomicUsize::new(0),
+            })
+        }
+    }
+
+    #[async_trait]
+    impl crate::capabilities::Capability for Recording {
+        fn id(&self) -> CapabilityId {
+            self.id
+        }
+
+        fn period(&self) -> Option<f32> {
+            self.period
+        }
+
+        async fn enable(&self, _ctx: &Context) -> Result<()> {
+            self.enables.fetch_add(1, Ordering::Relaxed);
+            Ok(())
+        }
+
+        async fn disable(&self, _ctx: &Context) -> Result<()> {
+            self.disables.fetch_add(1, Ordering::Relaxed);
+            Ok(())
+        }
+
+        async fn tick(&self, ctx: &Context) -> Result<()> {
+            self.ticks.fetch_add(1, Ordering::Relaxed);
+            ctx.transport.publish(
+                self.id.as_str(),
+                crate::domain::Message::Text("tick".to_owned()),
+            )
+        }
+
+        async fn configure(
+            &self,
+            _ctx: &Context,
+            _configuration: super::Configuration,
+        ) -> Result<super::ConfigurationResult> {
+            self.configures.fetch_add(1, Ordering::Relaxed);
+            Ok(self.configure_result.clone())
+        }
+    }
+
+    /// Serializes tests that assert on the process-wide shared-memory flags.
+    pub fn shm_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        LOCK.lock().unwrap_or_else(|err| err.into_inner())
     }
 
     /// Capability test harness: a context wired to fakes.

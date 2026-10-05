@@ -41,10 +41,12 @@ struct Job {
 #[derive(Default)]
 pub struct Scheduler {
     jobs: Mutex<HashMap<String, Job>>,
+    frequencies: Mutex<HashMap<String, f32>>,
 }
 
 impl Scheduler {
-    /// Spawns the periodic work of `id` at `hz` ticks per second.
+    /// Spawns the periodic work of `id` at `hz` ticks per second, or at the
+    /// last rate set for `id`.
     pub fn spawn(
         &self,
         transport: Arc<dyn Transport>,
@@ -53,6 +55,8 @@ impl Scheduler {
         gate: Gate,
         work: Work,
     ) {
+        let hz = self.frequency(id).unwrap_or(hz);
+        self.set_frequency(id, hz);
         let frequency = Frequency::new(hz);
         let task = tokio::spawn(run_job(
             transport,
@@ -66,24 +70,23 @@ impl Scheduler {
         );
     }
 
-    /// Changes the tick rate of `id`.
+    /// Changes the tick rate of `id`, now or when its job spawns.
     pub fn set_frequency(&self, id: &str, hz: f32) {
-        if let Some(job) = self
-            .jobs
+        self.frequencies
             .lock()
             .unwrap_or_else(|err| err.into_inner())
-            .get(id)
-        {
+            .insert(id.to_owned(), hz);
+        if let Some(job) = self.jobs.lock().unwrap_or_else(|err| err.into_inner()).get(id) {
             job.frequency.set(hz);
         }
     }
 
     pub fn frequency(&self, id: &str) -> Option<f32> {
-        self.jobs
+        self.frequencies
             .lock()
             .unwrap_or_else(|err| err.into_inner())
             .get(id)
-            .map(|job| job.frequency.get())
+            .copied()
     }
 
     /// Stops all periodic work.
