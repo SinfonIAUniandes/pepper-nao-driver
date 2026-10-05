@@ -12,11 +12,14 @@ pub mod joints;
 pub mod laser;
 pub mod leds;
 pub mod merged_laser;
+pub mod mic;
+pub mod mic_localization;
 pub mod moveto;
 pub mod navigation;
 pub mod odom;
 pub mod sonar;
 pub mod special_settings;
+pub mod speech;
 pub mod tf;
 pub mod touch;
 
